@@ -45,7 +45,7 @@ impl Process<f64> for Hysteresis{
         let y: f64 = self.y_p + (y_an - self.y_p) * dx.abs() / self.coerc;
         
         // prevent runaway accumulation by leaking state and clamping
-        self.y_p = (y * 0.98).clamp(-2.0, 2.0);
+        self.y_p = (y * 0.995).clamp(-1.25, 1.25);
 
         return y;
     }
