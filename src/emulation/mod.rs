@@ -31,16 +31,21 @@ impl Process<f64> for Hysteresis{
         let dx: f64 = input - self.x_p;
         self.x_p = input;
 
-        self.sq    = self.sq   .clamp(0.0  , 1.0);
-        self.coerc = self.coerc.clamp(0.0, 1.0);
+        // calmp hysteresis parameters to avoid floating point errors and
+        // NaN / infinity values
+        self.sq    = self.sq   .clamp(0.0 , 0.99);
+        self.coerc = self.coerc.clamp(0.07, 1.0);
 
+        // hysteresis loop equation
         let y_an: f64 = input.abs()
                              .powf(1.0/(1.0 - self.sq))
                              .tanh()
                              .powf(1.0 - self.sq)
                              * input.signum();
         let y: f64 = self.y_p + (y_an - self.y_p) * dx.abs() / self.coerc;
-        self.y_p = y;
+        
+        // prevent runaway accumulation by leaking state and clamping
+        self.y_p = (y * 0.98).clamp(-2.0, 2.0);
 
         return y;
     }
