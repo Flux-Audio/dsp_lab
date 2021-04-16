@@ -31,6 +31,9 @@ impl Process<f32> for Hysteresis{
         let dx: f32 = input - self.x_p;
         self.x_p = input;
 
+        self.sq    = self.sq   .clamp(0.0  , 0.99);
+        self.coerc = self.coerc.clamp(0.005, 1.0);
+
         let y_an: f32 = input.abs()
                              .powf(1.0/(1.0 - self.sq))
                              .tanh()
