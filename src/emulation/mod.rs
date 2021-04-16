@@ -20,26 +20,26 @@ use crate::traits::Process;
 /// Models magnetic hysteresis found in transformer cores and magnetic tape.
 /// Sub-modules depend on this
 pub struct Hysteresis {
-    x_p: f32,   // previous value of input
-    y_p: f32,   // previous value of output
-    pub sq:    f32,
-    pub coerc: f32,
+    x_p: f64,   // previous value of input
+    y_p: f64,   // previous value of output
+    pub sq:    f64,
+    pub coerc: f64,
 }
 
-impl Process<f32> for Hysteresis{
-    fn step(&mut self, input: f32) -> f32 { 
-        let dx: f32 = input - self.x_p;
+impl Process<f64> for Hysteresis{
+    fn step(&mut self, input: f64) -> f64 { 
+        let dx: f64 = input - self.x_p;
         self.x_p = input;
 
-        self.sq    = self.sq   .clamp(0.0  , 0.99);
-        self.coerc = self.coerc.clamp(0.005, 1.0);
+        self.sq    = self.sq   .clamp(0.0  , 1.0);
+        self.coerc = self.coerc.clamp(0.0, 1.0);
 
-        let y_an: f32 = input.abs()
+        let y_an: f64 = input.abs()
                              .powf(1.0/(1.0 - self.sq))
                              .tanh()
                              .powf(1.0 - self.sq)
                              * input.signum();
-        let y: f32 = self.y_p + (y_an - self.y_p) * dx.abs() / self.coerc;
+        let y: f64 = self.y_p + (y_an - self.y_p) * dx.abs() / self.coerc;
         self.y_p = y;
 
         return y;
