@@ -194,10 +194,29 @@ mod tests {
 
     // === HYSTERESIS ==========================================================
     #[bench]
-    fn bench_hyst(b: &mut test::Bencher) {
+    fn bench_hyst_fast(b: &mut test::Bencher) {
         use crate::emulation::Hysteresis;
         use crate::traits::Process;
         let mut hyst = Hysteresis::new();
+        let range = test::black_box(1000);
+        let mut _a = 0.0;   // garbage variable to prevent optimization
+
+        b.iter(|| {
+            for x in 0..range {
+                _a += hyst.step(x as f32 * 0.001);
+            }
+
+            // prevent optimizing away entire test body, by black-boxing return
+            test::black_box(_a)
+        });
+    }
+
+    #[bench]
+    fn bench_hyst_hq(b: &mut test::Bencher) {
+        use crate::emulation::Hysteresis;
+        use crate::traits::Process;
+        let mut hyst = Hysteresis::new();
+        hyst.fast = false;
         let range = test::black_box(1000);
         let mut _a = 0.0;   // garbage variable to prevent optimization
 

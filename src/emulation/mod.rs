@@ -25,6 +25,7 @@ pub struct Hysteresis {
     y_p: f32,   // previous value of output
     pub sq:    f32,
     pub coerc: f32,
+    pub fast:  bool,
 }
 
 impl Process<f32> for Hysteresis{
@@ -40,21 +41,23 @@ impl Process<f32> for Hysteresis{
         let k   =  self.coerc.clamp(0.1, 1.0);
         let mix = (self.coerc.clamp(0.0, 0.2) * 5.0).sqrt().sqrt().sqrt();
 
-        /*
-        // hysteresis loop equation:   104.155 ns/iter
-        let y_an: f32 = input.abs()
-                             .powf(1.0/(1.0 - self.sq))
-                             .tanh()
-                             .powf(1.0 - self.sq)
-                             * input.signum();
-        */
-
-        // optimized hysteresis loop eqation:   58.886 ns/iter
-        let y_an: f32 = fast_powf(
-                            fast_tanh(
-                                fast_powf(input.abs(), 1.0/(1.0 - self.sq))), 
-                            1.0 - self.sq)
-                      * input.signum();
+        // hysteresis loop equation (with fast toggle)
+        let y_an: f32 = if !self.fast {
+            // hq:      ~75 ns/iter
+            input.abs()
+                 .powf(1.0/(1.0 - self.sq))
+                 .tanh()
+                 .powf(1.0 - self.sq)
+                 * input.signum()
+                 
+        } else {
+            // fast:    ~55 ns/iter
+            fast_powf(
+                fast_tanh(
+                    fast_powf(input.abs(), 1.0/(1.0 - self.sq))), 
+                1.0 - self.sq)
+            * input.signum()
+        };
 
         let y: f32 = self.y_p + (y_an - self.y_p) * dx.abs() / k;
         
@@ -75,6 +78,7 @@ impl Hysteresis{
             y_p: 0.0,
             sq:   0.5,
             coerc: 0.5,
+            fast:  true,
         }
     }
 }
