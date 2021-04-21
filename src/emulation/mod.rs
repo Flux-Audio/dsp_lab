@@ -13,7 +13,7 @@
 // pub mod cables       // TODO: real cable modelling, with internal resistance, inductance, capacitance and interference noise
 // pub mod dischargers  // TODO: real discharge tube modelling, like stroboscopic tubes, fluorescent tubes
 // pub mod crystal      // TODO: real crystal oscillator modelling
-// pub mod tape         // TODO: real magnetic tape modelling, with read/write heads
+pub mod tape;       // real magnetic tape modelling, with read/write heads
 
 use crate::traits::Process;
 
@@ -34,7 +34,9 @@ impl Process<f64> for Hysteresis{
         // calmp hysteresis parameters to avoid floating point errors and
         // NaN / infinity values
         self.sq    = self.sq   .clamp(0.0 , 0.99);
-        self.coerc = self.coerc.clamp(0.07, 1.0);
+        // self.coerc = self.coerc.clamp(0.07, 1.0);
+        let k = self.coerc.clamp(0.5, 1.0);
+        let mix = self.coerc.clamp(0.0, 0.5) * 2.0;
 
         // hysteresis loop equation
         let y_an: f64 = input.abs()
@@ -42,12 +44,12 @@ impl Process<f64> for Hysteresis{
                              .tanh()
                              .powf(1.0 - self.sq)
                              * input.signum();
-        let y: f64 = self.y_p + (y_an - self.y_p) * dx.abs() / self.coerc;
+        let y: f64 = self.y_p + (y_an - self.y_p) * dx.abs() / k;
         
         // prevent runaway accumulation by leaking state and clamping
-        self.y_p = (y * 0.995).clamp(-1.25, 1.25);
+        self.y_p = (y * mix + y_an * (1.0 - mix)).clamp(-1.25, 1.25);
 
-        return y;
+        return self.y_p;
     }
 }
 
