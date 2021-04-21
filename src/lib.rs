@@ -13,6 +13,8 @@ within the framework is either a process or a chain. A process can also contain
 instances of chains, which themselves contain processes.
 */
 
+#![feature(is_subnormal)]
+
 pub mod traits;
 pub mod utils;
 pub mod core;
@@ -34,8 +36,8 @@ pub mod emulation;
 /// use dsp_lab::traits::Process;
 /// 
 /// # fn main(){
-/// let p1 = EmptyProcess{};
-/// let p2 = EmptyProcess{};
+/// let mut p1 = EmptyProcess{};
+/// let mut p2 = EmptyProcess{};
 /// let ch1 = chain!{1.0 => p1 => p2};
 /// 
 /// assert_eq!(ch1, 1.0);
@@ -52,21 +54,21 @@ pub mod emulation;
 /// struct AddOne {}
 /// /* impl omitted */
 /// # impl Process<f32> for AddOne {
-/// #    fn step(&self, input: f32) -> f32 { input + 1.0 }
+/// #    fn step(&mut self, input: f32) -> f32 { input + 1.0 }
 /// # }
 /// 
 /// # fn main(){
-/// let p1 = AddOne{};
+/// let mut p1 = AddOne{};
 /// let ch1 = chain!{1.0 => p1};
 /// 
 /// // Branching of ch1 into two chains ch2 and ch3:
-/// let p2 = AddOne{};
-/// let p3 = EmptyProcess{};
+/// let mut p2 = AddOne{};
+/// let mut p3 = EmptyProcess{};
 /// let ch2 = chain!{ch1 => p2};
 /// let ch3 = chain!{ch1 => p3};
 /// 
 /// // Mergin ch2 and ch3 into a signle chain c4
-/// let p4 = AddOne{};
+/// let mut p4 = AddOne{};
 /// let ch4 = chain!{ch2 * ch3 => p4};
 /// 
 /// assert_eq!(ch4, 7.0);

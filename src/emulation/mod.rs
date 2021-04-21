@@ -33,7 +33,8 @@ impl Process<f64> for Hysteresis{
 
         // calmp hysteresis parameters to avoid floating point errors and
         // NaN / infinity values
-        self.sq    = self.sq   .clamp(0.0 , 0.99);
+        self.sq = self.sq.clamp(0.0 , 0.99);
+
         // self.coerc = self.coerc.clamp(0.07, 1.0);
         let k   =  self.coerc.clamp(0.1, 1.0);
         let mix = (self.coerc.clamp(0.0, 0.2) * 5.0).sqrt().sqrt();
@@ -48,6 +49,9 @@ impl Process<f64> for Hysteresis{
         
         // prevent runaway accumulation by leaking state and clamping
         self.y_p = (y * mix + y_an * (1.0 - mix)).clamp(-1.25, 1.25);
+
+        // round denormals to zero in feedback loop
+        if self.y_p.is_subnormal() { self.y_p = 0.0 };
 
         return self.y_p;
     }

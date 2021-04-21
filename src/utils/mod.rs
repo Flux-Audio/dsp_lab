@@ -3,5 +3,5 @@
 
 // pub mod clipping;            TODO:
 // pub mod saturation;          TODO:
-// pub mod math;                // TODO: crossfading
+pub mod math;                // crossfading
 // pub mod conversion;          // TODO: pitch to freq, bpm to hz, pitch to 1v/oct
