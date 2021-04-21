@@ -35,7 +35,7 @@ impl Process<f32> for Hysteresis{
 
         // calmp hysteresis parameters to avoid floating point errors and
         // NaN / infinity values
-        self.sq = self.sq.clamp(0.0 , 0.99);
+        self.sq = self.sq.clamp(0.0 , 0.95);
 
         // crossfade to stateless distortion, for small values of coercitivity
         let k   =  self.coerc.clamp(0.1, 1.0);
