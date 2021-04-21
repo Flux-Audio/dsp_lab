@@ -16,36 +16,47 @@
 pub mod tape;       // real magnetic tape modelling, with read/write heads
 
 use crate::traits::Process;
+use crate::utils::math::{fast_powf, fast_tanh};
 
 /// Models magnetic hysteresis found in transformer cores and magnetic tape.
 /// Sub-modules depend on this
 pub struct Hysteresis {
-    x_p: f64,   // previous value of input
-    y_p: f64,   // previous value of output
-    pub sq:    f64,
-    pub coerc: f64,
+    x_p: f32,   // previous value of input
+    y_p: f32,   // previous value of output
+    pub sq:    f32,
+    pub coerc: f32,
 }
 
-impl Process<f64> for Hysteresis{
-    fn step(&mut self, input: f64) -> f64 { 
-        let dx: f64 = input - self.x_p;
+impl Process<f32> for Hysteresis{
+    fn step(&mut self, input: f32) -> f32 { 
+        let dx: f32 = input - self.x_p;
         self.x_p = input;
 
         // calmp hysteresis parameters to avoid floating point errors and
         // NaN / infinity values
         self.sq = self.sq.clamp(0.0 , 0.99);
 
-        // self.coerc = self.coerc.clamp(0.07, 1.0);
+        // crossfade to stateless distortion, for small values of coercitivity
         let k   =  self.coerc.clamp(0.1, 1.0);
-        let mix = (self.coerc.clamp(0.0, 0.2) * 5.0).sqrt().sqrt();
+        let mix = (self.coerc.clamp(0.0, 0.2) * 5.0).sqrt().sqrt().sqrt();
 
-        // hysteresis loop equation
-        let y_an: f64 = input.abs()
+        /*
+        // hysteresis loop equation:   104.155 ns/iter
+        let y_an: f32 = input.abs()
                              .powf(1.0/(1.0 - self.sq))
                              .tanh()
                              .powf(1.0 - self.sq)
                              * input.signum();
-        let y: f64 = self.y_p + (y_an - self.y_p) * dx.abs() / k;
+        */
+
+        // optimized hysteresis loop eqation:   58.886 ns/iter
+        let y_an: f32 = fast_powf(
+                            fast_tanh(
+                                fast_powf(input.abs(), 1.0/(1.0 - self.sq))), 
+                            1.0 - self.sq)
+                      * input.signum();
+
+        let y: f32 = self.y_p + (y_an - self.y_p) * dx.abs() / k;
         
         // prevent runaway accumulation by leaking state and clamping
         self.y_p = (y * mix + y_an * (1.0 - mix)).clamp(-1.25, 1.25);

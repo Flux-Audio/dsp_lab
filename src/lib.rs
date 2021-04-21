@@ -14,6 +14,10 @@ instances of chains, which themselves contain processes.
 */
 
 #![feature(is_subnormal)]
+#![feature(test)]
+
+extern crate test;
+use test::{Bencher, black_box};
 
 pub mod traits;
 pub mod utils;
@@ -92,7 +96,118 @@ macro_rules! chain {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn placeholder() {
+    fn test_placeholder() {
         assert!(true);
+    }
+
+    #[test]
+    fn test_fast_powf() {
+        use crate::utils::math::fast_powf;
+        assert!( (fast_powf(2.1,  2.1) - 2.1_f32.powf( 2.1)).abs() < 0.002  );
+        assert!( (fast_powf(2.1,  4.1) - 2.1_f32.powf( 4.1)).abs() < 0.07   );
+        assert!( (fast_powf(2.1, -2.1) - 2.1_f32.powf(-2.1)).abs() < 0.0001 );
+    }
+
+    #[test]
+    fn test_fast_tanh() {
+        use crate::utils::math::fast_tanh;
+        println!("{}", fast_tanh(0.75));
+        assert!( (fast_tanh( 0.75) - 0.75_f32.tanh()).abs() < 0.0002 );
+        assert!( (fast_tanh(-0.75) + 0.75_f32.tanh()).abs() < 0.0002 );
+        assert!( fast_tanh(0.05) == 0.05 );
+        assert!( fast_tanh(5.1) == 1.0 );
+    }
+
+    // === STD POWF vs. FAST_POWF ==============================================
+    // In these tests base and exponent are kept within ranges that are common
+    // for signal processing applications, i.e. 
+    // 0 <= base <= 2, and 
+    // 0 <= exponent <= 10
+    #[bench]
+    fn bench_std_powf(b: &mut test::Bencher) {
+        let range = test::black_box(1000);
+        let mut _a = 0.0;   // garbage variable to prevent optimization
+
+        b.iter(|| {
+            for b in 0..range {
+                for x in 0..range {
+                    _a += (b as f32 * 0.002).powf(x as f32 * 0.01);
+                }
+            }
+
+            // prevent optimizing away entire test body, by black-boxing return
+            test::black_box(_a)
+        });
+    }
+
+    #[bench]
+    fn bench_fast_powf(b: &mut test::Bencher) {
+        use crate::utils::math::fast_powf;
+        let range = test::black_box(1000);
+        let mut _a = 0.0;   // garbage variable to prevent optimization
+
+        b.iter(|| {
+            for b in 0..range {
+                for x in 0..range {
+                    _a += fast_powf(b as f32 * 0.002, x as f32 * 0.01);
+                }
+            }
+
+            // prevent optimizing away entire test body, by black-boxing return
+            test::black_box(_a)
+        });
+    }
+
+
+    // === STD TANH vs. FAST TANH ==============================================
+    #[bench]
+    fn bench_std_tanh(b: &mut test::Bencher) {
+        let range = test::black_box(1000);
+        let mut _a = 0.0;   // garbage variable to prevent optimization
+
+        b.iter(|| {
+            for x in 0..range {
+                _a += (x as f32 * 0.005).tanh();
+            }
+
+            // prevent optimizing away entire test body, by black-boxing return
+            test::black_box(_a)
+        });
+    }
+
+    #[bench]
+    fn bench_fast_tanh(b: &mut test::Bencher) {
+        use crate::utils::math::fast_tanh;
+        let range = test::black_box(1000);
+        let mut _a = 0.0;   // garbage variable to prevent optimization
+
+        b.iter(|| {
+            for x in 0..range {
+                _a += fast_tanh(x as f32 * 0.005);
+            }
+
+            // prevent optimizing away entire test body, by black-boxing return
+            test::black_box(_a)
+        });
+    }
+
+
+    // === HYSTERESIS ==========================================================
+    #[bench]
+    fn bench_hyst(b: &mut test::Bencher) {
+        use crate::emulation::Hysteresis;
+        use crate::traits::Process;
+        let mut hyst = Hysteresis::new();
+        let range = test::black_box(1000);
+        let mut _a = 0.0;   // garbage variable to prevent optimization
+
+        b.iter(|| {
+            for x in 0..range {
+                _a += hyst.step(x as f32 * 0.001);
+            }
+
+            // prevent optimizing away entire test body, by black-boxing return
+            test::black_box(_a)
+        });
     }
 }
