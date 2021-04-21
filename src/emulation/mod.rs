@@ -36,7 +36,7 @@ impl Process<f64> for Hysteresis{
         self.sq    = self.sq   .clamp(0.0 , 0.99);
         // self.coerc = self.coerc.clamp(0.07, 1.0);
         let k = self.coerc.clamp(0.125, 1.0);
-        let mix = self.coerc.clamp(0.0, 0.25) * 4.0;
+        let mix = self.coerc.clamp(0.0, 0.125) * 8.0;
 
         // hysteresis loop equation
         let y_an: f64 = input.abs()
