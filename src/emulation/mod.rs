@@ -39,7 +39,7 @@ impl Process<f32> for Hysteresis{
 
         // crossfade to stateless distortion, for small values of coercitivity
         let k   =  self.coerc.clamp(0.1, 1.0);
-        let mix = (self.coerc.clamp(0.0, 0.2) * 5.0).sqrt().sqrt().sqrt();
+        let mix = (self.coerc.clamp(0.0, 0.2) * 5.0).sqrt().sqrt();
 
         // hysteresis loop equation (with fast toggle)
         let y_an: f32 = if !self.fast {
