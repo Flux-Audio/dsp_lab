@@ -57,8 +57,8 @@ pub mod emulation;
 /// 
 /// struct AddOne {}
 /// /* impl omitted */
-/// # impl Process<f32> for AddOne {
-/// #    fn step(&mut self, input: f32) -> f32 { input + 1.0 }
+/// # impl Process<f64> for AddOne {
+/// #    fn step(&mut self, input: f64) -> f64 { input + 1.0 }
 /// # }
 /// 
 /// # fn main(){
@@ -118,6 +118,8 @@ mod tests {
         assert!( fast_tanh(5.1) == 1.0 );
     }
 
+    /*
+    TODO: benches are outdated
     // === STD POWF vs. FAST_POWF ==============================================
     // In these tests base and exponent are kept within ranges that are common
     // for signal processing applications, i.e. 
@@ -131,7 +133,7 @@ mod tests {
         b.iter(|| {
             for b in 0..range {
                 for x in 0..range {
-                    _a += (b as f32 * 0.002).powf(x as f32 * 0.01);
+                    _a += (b as f64 * 0.002).powf(x as f64 * 0.01);
                 }
             }
 
@@ -149,7 +151,7 @@ mod tests {
         b.iter(|| {
             for b in 0..range {
                 for x in 0..range {
-                    _a += fast_powf(b as f32 * 0.002, x as f32 * 0.01);
+                    _a += fast_powf(b as f64 * 0.002, x as f64 * 0.01);
                 }
             }
 
@@ -167,7 +169,7 @@ mod tests {
 
         b.iter(|| {
             for x in 0..range {
-                _a += (x as f32 * 0.005).tanh();
+                _a += (x as f64 * 0.005).tanh();
             }
 
             // prevent optimizing away entire test body, by black-boxing return
@@ -183,7 +185,7 @@ mod tests {
 
         b.iter(|| {
             for x in 0..range {
-                _a += fast_tanh(x as f32 * 0.005);
+                _a += fast_tanh(x as f64 * 0.005);
             }
 
             // prevent optimizing away entire test body, by black-boxing return
@@ -203,7 +205,7 @@ mod tests {
 
         b.iter(|| {
             for x in 0..range {
-                _a += hyst.step(x as f32 * 0.001);
+                _a += hyst.step(x as f64 * 0.001);
             }
 
             // prevent optimizing away entire test body, by black-boxing return
@@ -216,17 +218,18 @@ mod tests {
         use crate::emulation::Hysteresis;
         use crate::traits::Process;
         let mut hyst = Hysteresis::new();
-        hyst.fast = false;
+        //hyst.fast = false;
         let range = test::black_box(1000);
         let mut _a = 0.0;   // garbage variable to prevent optimization
 
         b.iter(|| {
             for x in 0..range {
-                _a += hyst.step(x as f32 * 0.001);
+                _a += hyst.step(x as f64 * 0.001);
             }
 
             // prevent optimizing away entire test body, by black-boxing return
             test::black_box(_a)
         });
     }
+    */
 }

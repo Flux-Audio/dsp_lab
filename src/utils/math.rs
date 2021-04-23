@@ -3,6 +3,7 @@
 
 use fast_math::{exp2, log2, exp_raw, exp2_raw};
 
+// TODO: make a 64-bit version
 /// Fast version of `powf()`.
 /// 
 /// Note that the performance gains are small enough that it won't be worth it
@@ -13,6 +14,7 @@ use fast_math::{exp2, log2, exp_raw, exp2_raw};
 /// + it has a large error if the exponent is outside the range -128 < x < 128
 pub fn fast_powf(b: f32, x: f32) -> f32 { exp2(x * log2(b)) }
 
+// make a 64-bit version
 /// Fast version of `tanh()`
 pub fn fast_tanh(x: f32) -> f32 {
     if x > -0.075 && x < 0.075 { return x; }
@@ -28,7 +30,7 @@ pub fn fast_tanh(x: f32) -> f32 {
 /// The crossfading parameter is clamped between 0 and 1.
 /// This function is inlined for hot use inside of interpolation algorithms.
 #[inline(always)]
-pub fn x_fade(a: f32, x: f32, b: f32) -> f32 {
+pub fn x_fade(a: f64, x: f64, b: f64) -> f64 {
     let x_clamp = x.clamp(0.0, 1.0);
     a * (1.0 - x_clamp) + b * x_clamp
 }
@@ -43,7 +45,7 @@ pub fn x_fade(a: f32, x: f32, b: f32) -> f32 {
 /// assert!(post < 1.0);
 /// assert!(2.0*pre*post == 2.0);
 /// ```
-pub fn pre_post_gains(x: f32) -> (f32, f32) {
+pub fn pre_post_gains(x: f64) -> (f64, f64) {
     if x < 0.0 {
         (1.0 / (1.0 - x), 1.0 - x)
     } else {
