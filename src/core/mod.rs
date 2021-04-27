@@ -2,9 +2,9 @@
 
 // pub mod integrators;         TODO:
 // pub mod derivatives;         TODO:
-pub mod lin_filters;            // linear filters
+pub mod lin_filter;            // linear filters
 // pub mod non_lin_filters;     // TODO: non-linear filters, like slew limiters, rolling median
-// pub mod oscillators;         TODO:
+pub mod osc;
 // pub mod envelopes;           TODO:
 pub mod chaos;                  // random and noise
 pub mod delay;               // TODO: delay line with interpolation
