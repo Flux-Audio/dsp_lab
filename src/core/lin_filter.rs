@@ -1,10 +1,13 @@
 //! Linear filters.
 //! 
 //! + 1-pole high-pass and low-pass topologies  TODO:
-//! + 2-pole filters, based on an SVF core
+//! + 2-pole filters, based on an Svf core
 //! + Generic FIR filters   TODO:
 
+use std::f64::consts;
+
 use crate::traits::Process;
+use crate::chain;
 
 // 2-pole state variable filter. Implements lowpass, highpass, notch and
 // bandpass filters with shared state. Is used internally by filter processes.
@@ -54,15 +57,15 @@ impl SvfCore {
 }
 
 
-/// 2-pole SVF low-pass filter
+/// 2-pole Svf low-pass filter
 /// TODO: test this
-pub struct SVFLowPass {
+pub struct SvfLowPass {
     core: SvfCore,
     pub cutoff: f64,
     pub res: f64,
 }
 
-impl Process<f64> for SVFLowPass {
+impl Process<f64> for SvfLowPass {
     fn step(&mut self, input: f64) -> f64 {
         self.core.cutoff = self.cutoff;
         self.core.res = self.res;
@@ -71,7 +74,7 @@ impl Process<f64> for SVFLowPass {
     }
 }
 
-impl SVFLowPass {
+impl SvfLowPass {
     pub fn new() -> Self {
         Self {
             core: SvfCore::new(),
@@ -82,15 +85,15 @@ impl SVFLowPass {
 }
 
 
-/// 2-pole SVF high-pass filter
+/// 2-pole Svf high-pass filter
 /// TODO: test this
-pub struct SVFHighPass {
+pub struct SvfHighPass {
     core: SvfCore,
     pub cutoff: f64,
     pub res: f64,
 }
 
-impl Process<f64> for SVFHighPass {
+impl Process<f64> for SvfHighPass {
     fn step(&mut self, input: f64) -> f64 {
         self.core.cutoff = self.cutoff;
         self.core.res = self.res;
@@ -99,7 +102,7 @@ impl Process<f64> for SVFHighPass {
     }
 }
 
-impl SVFHighPass {
+impl SvfHighPass {
     pub fn new() -> Self {
         Self {
             core: SvfCore::new(),
@@ -110,15 +113,15 @@ impl SVFHighPass {
 }
 
 
-/// 2-pole SVF band-pass filter
+/// 2-pole Svf band-pass filter
 /// TODO: test this
-pub struct SVFBandPass {
+pub struct SvfBandPass {
     core: SvfCore,
     pub cutoff: f64,
     pub res: f64,
 }
 
-impl Process<f64> for SVFBandPass {
+impl Process<f64> for SvfBandPass {
     fn step(&mut self, input: f64) -> f64 {
         self.core.cutoff = self.cutoff;
         self.core.res = self.res;
@@ -127,7 +130,7 @@ impl Process<f64> for SVFBandPass {
     }
 }
 
-impl SVFBandPass {
+impl SvfBandPass {
     pub fn new() -> Self {
         Self {
             core: SvfCore::new(),
@@ -138,15 +141,15 @@ impl SVFBandPass {
 }
 
 
-/// 2-pole SVF band-stop filter
+/// 2-pole Svf band-stop filter
 /// TODO: test this
-pub struct SVFBandStop {
+pub struct SvfBandStop {
     core: SvfCore,
     pub cutoff: f64,
     pub res: f64,
 }
 
-impl Process<f64> for SVFBandStop {
+impl Process<f64> for SvfBandStop {
     fn step(&mut self, input: f64) -> f64 {
         self.core.cutoff = self.cutoff;
         self.core.res = self.res;
@@ -155,7 +158,7 @@ impl Process<f64> for SVFBandStop {
     }
 }
 
-impl SVFBandStop {
+impl SvfBandStop {
     pub fn new() -> Self {
         Self {
             core: SvfCore::new(),
@@ -166,47 +169,55 @@ impl SVFBandStop {
 }
 
 
-/*
-TODO: this is outdated
-
-/// DC offset blocking filter.
-pub struct BlockDC {
-    x_z1: f32,
-    y_z1: f32,
+/// Single pole, no zero lowpass. Extremely subtle and extremely cheap
+pub struct LowPass1P {
+    a0: f64,
+    b1: f64,
+    z1: f64,
+    inv_sr: f64,
 }
 
-impl BlockDC {
-    /// Initialize filter state variables.
-    pub fn new() -> Self {
+impl LowPass1P {
+    pub fn new(sr: f64) -> Self {
         Self {
-            x_z1: 0.0,
-            y_z1: 0.0,
+            a0: 1.0,
+            b1: 0.0,
+            z1: 0.0,
+            inv_sr: 1.0 / sr,
         }
     }
 
-    /// Weak DC blocker. Use for blocking constant DC in input.
-    pub fn filter_weak(&mut self, input: f32) -> f32 {
-        self.y_z1 = input - self.x_z1 + 0.995*self.y_z1;
-        self.x_z1 = input;
-        return self.y_z1;
+    /// Set 3dB cutoff point in hertz.
+    pub fn set_cutoff(&mut self, cut: f64) {
+        let cut_rad = cut * self.inv_sr;
+        self.b1 = (-consts::TAU * cut_rad).exp();
+        self.a0 = 1.0 - self.b1;
     }
+}
 
-    /// Medium DC blocker. Use for blocking sub-sonic sound in input.
-    pub fn filter_medium(&mut self, input: f32) -> f32 {
-        self.y_z1 = input - self.x_z1 + 0.9*self.y_z1;
-        self.x_z1 = input;
-        return self.y_z1;
+impl Process<f64> for LowPass1P {
+    fn step(&mut self, input: f64) -> f64 {
+        self.z1 = input * self.a0 + self.z1 * self.b1;
+        return self.z1;
     }
+}
 
-    /// Strong DC blocker. Use for blocking DC in feedback loops, i.e. for stabilizing
-    /// an unstable feedback loop. For this application you might want to combine
-    /// it with a highpass filter at approximately 18kHz.
-    /// 
-    /// Note also that this filter will remove some of the sub bass, so use only
-    /// when strictly necessary.
-    pub fn filter_strong(&mut self, input: f32) -> f32 {
-        self.y_z1 = input - self.x_z1 + 0.5*self.y_z1;
-        self.x_z1 = input;
-        return self.y_z1;
+
+/// Static gentle high-pass to block DC offsets.
+pub struct DcBlock { lp: LowPass1P, }
+
+impl DcBlock {
+    /// Initialize filter state variables.
+    pub fn new(sr: f64) -> Self {
+        let mut ret = Self { lp: LowPass1P::new(sr), };
+        ret.lp.set_cutoff(10.0);
+        return ret;
     }
-}*/
+}
+
+impl Process<f64> for DcBlock {
+    fn step(&mut self, input: f64) -> f64 { 
+        let lp = &mut self.lp;
+        input - chain!(input => lp)
+    }
+}

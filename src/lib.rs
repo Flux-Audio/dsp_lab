@@ -42,7 +42,7 @@ pub mod emulation;
 /// # fn main(){
 /// let mut p1 = EmptyProcess{};
 /// let mut p2 = EmptyProcess{};
-/// let ch1 = chain_exp!{1.0 => p1 => p2};
+/// let ch1 = chain!{1.0 => p1 => p2};
 /// 
 /// assert_eq!(ch1, 1.0);
 /// assert_eq!(ch1, p2.step(p1.step(1.0)));
@@ -63,23 +63,23 @@ pub mod emulation;
 /// 
 /// # fn main(){
 /// let mut p1 = AddOne{};
-/// let ch1 = chain_exp!{1.0 => p1};
+/// let ch1 = chain!{1.0 => p1};
 /// 
 /// // Branching of ch1 into two chains ch2 and ch3:
 /// let mut p2 = AddOne{};
 /// let mut p3 = EmptyProcess{};
-/// let ch2 = chain_exp!{ch1 => p2};
-/// let ch3 = chain_exp!{ch1 => p3};
+/// let ch2 = chain!{ch1 => p2};
+/// let ch3 = chain!{ch1 => p3};
 /// 
 /// // Mergin ch2 and ch3 into a signle chain c4
 /// let mut p4 = AddOne{};
-/// let ch4 = chain_exp!{ch2 * ch3 => p4};
+/// let ch4 = chain!{ch2 * ch3 => p4};
 /// 
 /// assert_eq!(ch4, 7.0);
 /// # }
 /// ```
 #[macro_export]
-macro_rules! chain_exp {
+macro_rules! chain {
     // Base case: single function call
     { $arg:expr => $p:ident } => {
         $p.step($arg);
@@ -88,8 +88,20 @@ macro_rules! chain_exp {
     // Recursive case: chaining the output of the first function call in the
     // chain with the rest of the chain.
     { $arg:expr => $p:ident => $($tokens:tt)* } => {{
-        chain_exp!($p.step($arg) => $($tokens)*)
+        chain!($p.step($arg) => $($tokens)*)
     }};
+
+    // Alternate base case: calling a process on self
+    { $arg:expr => self.$p:ident } => {
+        self.$p.step($arg);
+    };
+
+    // Alternate recursive case: calling a process on self
+    /* TODO: self in macros is not supported yet...
+    { $arg:expr => self.$p:ident => $($tokens:tt)* } => {{
+        chain!(self.$p.step($arg) => $($tokens)*)
+    }};
+    */
 }
 
 
@@ -114,16 +126,17 @@ macro_rules! chain_exp {
 /// ```
 #[macro_export]
 macro_rules! chain_src {
-    // Base case: single function call
-    { $src:ident => $p:ident } => {
-        chain_exp!($src.step() => $p);
+    // Base case: parse source, and pass expression to chain!
+    { $src:ident => $($tokens:tt)* } => {
+        chain!($src.step() => $($tokens)*);
     };
 
-    // Recursive case: chaining the output of the first function call in the 
-    // chain with the rest of the chain
-    { $src:ident => $p:ident => $($tokens:tt)* } => {{
-        chain_src!(chain_exp!($src.step() => $p) => $($tokens)*)
-    }};
+    // Alternate case: calling a source on self
+    /* TODO: self in macros is not supported yet...
+    { self.$src:ident => $($tokens:tt)* } => {
+        chain!(self.$src.step() => $($tokens)*);
+    }
+    */
 }
 
 // Non-documented tests
