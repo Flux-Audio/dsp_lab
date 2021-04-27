@@ -17,7 +17,7 @@ instances of chains, which themselves contain processes.
 #![feature(test)]
 
 extern crate test;
-use test::{Bencher, black_box};
+use test::Bencher;
 
 pub mod traits;
 pub mod utils;
@@ -42,7 +42,7 @@ pub mod emulation;
 /// # fn main(){
 /// let mut p1 = EmptyProcess{};
 /// let mut p2 = EmptyProcess{};
-/// let ch1 = chain!{1.0 => p1 => p2};
+/// let ch1 = chain_exp!{1.0 => p1 => p2};
 /// 
 /// assert_eq!(ch1, 1.0);
 /// assert_eq!(ch1, p2.step(p1.step(1.0)));
@@ -63,23 +63,23 @@ pub mod emulation;
 /// 
 /// # fn main(){
 /// let mut p1 = AddOne{};
-/// let ch1 = chain!{1.0 => p1};
+/// let ch1 = chain_exp!{1.0 => p1};
 /// 
 /// // Branching of ch1 into two chains ch2 and ch3:
 /// let mut p2 = AddOne{};
 /// let mut p3 = EmptyProcess{};
-/// let ch2 = chain!{ch1 => p2};
-/// let ch3 = chain!{ch1 => p3};
+/// let ch2 = chain_exp!{ch1 => p2};
+/// let ch3 = chain_exp!{ch1 => p3};
 /// 
 /// // Mergin ch2 and ch3 into a signle chain c4
 /// let mut p4 = AddOne{};
-/// let ch4 = chain!{ch2 * ch3 => p4};
+/// let ch4 = chain_exp!{ch2 * ch3 => p4};
 /// 
 /// assert_eq!(ch4, 7.0);
 /// # }
 /// ```
 #[macro_export]
-macro_rules! chain {
+macro_rules! chain_exp {
     // Base case: single function call
     { $arg:expr => $p:ident } => {
         $p.step($arg);
@@ -88,148 +88,132 @@ macro_rules! chain {
     // Recursive case: chaining the output of the first function call in the
     // chain with the rest of the chain.
     { $arg:expr => $p:ident => $($tokens:tt)* } => {{
-        chain!($p.step($arg) => $($tokens)*)
+        chain_exp!($p.step($arg) => $($tokens)*)
+    }};
+}
+
+
+/// This macro adds syntactic sugar for chaining sources (processes that take no
+/// input) into chains of processes.
+/// 
+/// # Examples
+/// General usage:
+/// ```
+/// # #[macro_use] extern crate dsp_lab;
+/// use dsp_lab::core::{EmptyProcess, EmptySource};
+/// use dsp_lab::traits::{Process, Source};
+/// 
+/// # fn main(){
+/// let mut s = EmptySource{};
+/// let mut p = EmptyProcess{};
+/// let ch = chain_src!{s => p};
+/// 
+/// assert_eq!(ch, 1.0);
+/// assert_eq!(ch, p.step(s.step()));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! chain_src {
+    // Base case: single function call
+    { $src:ident => $p:ident } => {
+        chain_exp!($src.step() => $p);
+    };
+
+    // Recursive case: chaining the output of the first function call in the 
+    // chain with the rest of the chain
+    { $src:ident => $p:ident => $($tokens:tt)* } => {{
+        chain_src!(chain_exp!($src.step() => $p) => $($tokens)*)
     }};
 }
 
 // Non-documented tests
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn test_placeholder() {
-        assert!(true);
-    }
 
     #[test]
-    fn test_fast_powf() {
-        use crate::utils::math::fast_powf;
-        assert!( (fast_powf(2.1,  2.1) - 2.1_f32.powf( 2.1)).abs() < 0.002  );
-        assert!( (fast_powf(2.1,  4.1) - 2.1_f32.powf( 4.1)).abs() < 0.07   );
-        assert!( (fast_powf(2.1, -2.1) - 2.1_f32.powf(-2.1)).abs() < 0.0001 );
+    fn test_random_core() {
+        use crate::core::chaos::RandomCore;
+        let mut rng1 = RandomCore::new();
+        let mut rng2 = RandomCore::new();
+        rng1.reseed(11_u8);
+        rng2.reseed(17_u8);
+        assert!(rng1.next() != rng2.next());
     }
 
     #[test]
-    fn test_fast_tanh() {
-        use crate::utils::math::fast_tanh;
-        println!("{}", fast_tanh(0.75));
-        assert!( (fast_tanh( 0.75) - 0.75_f32.tanh()).abs() < 0.0002 );
-        assert!( (fast_tanh(-0.75) + 0.75_f32.tanh()).abs() < 0.0002 );
-        assert!( fast_tanh(0.05) == 0.05 );
-        assert!( fast_tanh(5.1) == 1.0 );
+    fn test_random_coin() {
+        use crate::core::chaos::RandomCoin;
+        use crate::traits::Source;
+        let mut coin = RandomCoin::new(11_u8);
+        coin.p = 0.0;
+        for _ in 0..100 { assert!(coin.step() == 0.0); }
+        coin.p = 1.0;
+        for _ in 0..100 { assert!(coin.step() == 1.0); }
     }
 
-    /*
-    TODO: benches are outdated
-    // === STD POWF vs. FAST_POWF ==============================================
-    // In these tests base and exponent are kept within ranges that are common
-    // for signal processing applications, i.e. 
-    // 0 <= base <= 2, and 
-    // 0 <= exponent <= 10
-    #[bench]
-    fn bench_std_powf(b: &mut test::Bencher) {
-        let range = test::black_box(1000);
-        let mut _a = 0.0;   // garbage variable to prevent optimization
-
-        b.iter(|| {
-            for b in 0..range {
-                for x in 0..range {
-                    _a += (b as f64 * 0.002).powf(x as f64 * 0.01);
-                }
-            }
-
-            // prevent optimizing away entire test body, by black-boxing return
-            test::black_box(_a)
-        });
+    # [test]
+    fn test_random_toggle() {
+        use crate::core::chaos::RandomToggle;
+        use crate::traits::Source;
+        let mut toggle = RandomToggle::new(11_u8);
+        for _ in 0..10 { toggle.step(); }
+        toggle.p_up = 0.0;
+        toggle.p_down = 1.0;
+        toggle.step();
+        assert!(toggle.step() == 0.0);
+        toggle.p_up = 0.25;
+        toggle.p_down = 0.25;
+        for _ in 0..10 { toggle.step(); }
+        toggle.p_up = 1.0;
+        toggle.p_down = 0.0;
+        toggle.step();
+        assert!(toggle.step() == 1.0);
     }
 
-    #[bench]
-    fn bench_fast_powf(b: &mut test::Bencher) {
-        use crate::utils::math::fast_powf;
-        let range = test::black_box(1000);
-        let mut _a = 0.0;   // garbage variable to prevent optimization
-
-        b.iter(|| {
-            for b in 0..range {
-                for x in 0..range {
-                    _a += fast_powf(b as f64 * 0.002, x as f64 * 0.01);
-                }
-            }
-
-            // prevent optimizing away entire test body, by black-boxing return
-            test::black_box(_a)
-        });
+    #[test]
+    fn test_noise_white() {
+        use crate::core::chaos::NoiseWhite;
+        use crate::traits::Source;
+        let mut nse = NoiseWhite::new(11);
+        assert!(nse.step() != nse.step());  
+        let mut acc: f64 = 0.0;
+        for _ in 0..10000 {
+            let sample = nse.step();
+            acc += sample;
+            assert!(sample < 1.0);
+        }
+        acc /= 10000.0;
+        assert!(acc > 0.45 && acc < 0.55);
     }
 
-
-    // === STD TANH vs. FAST TANH ==============================================
     #[bench]
     fn bench_std_tanh(b: &mut test::Bencher) {
-        let range = test::black_box(1000);
+        let range = test::black_box(100);
         let mut _a = 0.0;   // garbage variable to prevent optimization
 
         b.iter(|| {
-            for x in 0..range {
-                _a += (x as f64 * 0.005).tanh();
+            for b in 0..range {
+                _a += (b as f64 * 0.002).tanh();
             }
 
             // prevent optimizing away entire test body, by black-boxing return
             test::black_box(_a)
         });
     }
-
+    
     #[bench]
-    fn bench_fast_tanh(b: &mut test::Bencher) {
-        use crate::utils::math::fast_tanh;
-        let range = test::black_box(1000);
+    fn bench_fast_sigmoid(b: &mut test::Bencher) {
+        use crate::utils::math::fast_sigmoid;
+        let range = test::black_box(100);
         let mut _a = 0.0;   // garbage variable to prevent optimization
 
         b.iter(|| {
-            for x in 0..range {
-                _a += fast_tanh(x as f64 * 0.005);
+            for b in 0..range {
+                _a += fast_sigmoid(b as f64 * 0.002);
             }
 
             // prevent optimizing away entire test body, by black-boxing return
             test::black_box(_a)
         });
     }
-
-
-    // === HYSTERESIS ==========================================================
-    #[bench]
-    fn bench_hyst_fast(b: &mut test::Bencher) {
-        use crate::emulation::Hysteresis;
-        use crate::traits::Process;
-        let mut hyst = Hysteresis::new();
-        let range = test::black_box(1000);
-        let mut _a = 0.0;   // garbage variable to prevent optimization
-
-        b.iter(|| {
-            for x in 0..range {
-                _a += hyst.step(x as f64 * 0.001);
-            }
-
-            // prevent optimizing away entire test body, by black-boxing return
-            test::black_box(_a)
-        });
-    }
-
-    #[bench]
-    fn bench_hyst_hq(b: &mut test::Bencher) {
-        use crate::emulation::Hysteresis;
-        use crate::traits::Process;
-        let mut hyst = Hysteresis::new();
-        //hyst.fast = false;
-        let range = test::black_box(1000);
-        let mut _a = 0.0;   // garbage variable to prevent optimization
-
-        b.iter(|| {
-            for x in 0..range {
-                _a += hyst.step(x as f64 * 0.001);
-            }
-
-            // prevent optimizing away entire test body, by black-boxing return
-            test::black_box(_a)
-        });
-    }
-    */
 }

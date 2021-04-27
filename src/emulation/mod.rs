@@ -16,7 +16,6 @@
 pub mod tape;       // real magnetic tape modelling, with read/write heads
 
 use crate::traits::Process;
-use crate::utils::math::{fast_powf, fast_tanh};
 
 /// Models magnetic hysteresis found in transformer cores and magnetic tape.
 /// Sub-modules depend on this
@@ -72,9 +71,6 @@ impl Process<f64> for Hysteresis{
         
         // prevent runaway accumulation by clamping
         self.y_p = (y * mix + y_an * (1.0 - mix)).clamp(-1.25, 1.25);
-
-        // round denormals to zero in feedback loop
-        // if self.y_p.is_subnormal() { self.y_p = 0.0 };
 
         return self.y_p;
     }
