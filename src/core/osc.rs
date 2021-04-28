@@ -3,6 +3,7 @@ use std::f64::consts;
 use crate::traits::Process;
 use crate::traits::Source;
 
+// === RAMP CORE ===
 
 /// Phase ramp for driving all oscillators in this module
 pub struct RampCore{
@@ -11,7 +12,6 @@ pub struct RampCore{
     rad_per_sec: f64,
     sr: f64,
 }
-
 
 impl RampCore {
     /// Initialize a new oscillator
@@ -43,6 +43,17 @@ impl Source<f64> for RampCore {
     fn step(&mut self) -> f64 {
         let ret = self.phase;
         self.phase += self.rad_per_sec/self.sr;
+        self.phase = self.phase.rem_euclid(consts::TAU);
         return ret;
     }
 }
+
+
+// === BASIC SHAPES ===
+
+/// Variable symmetry trianlge oscillator. The `asym` control, makes the rising
+/// and falling slopes different, at the extreme (1.0), it turns into a saw wave.
+pub struct VarTriOsc {
+
+}
+

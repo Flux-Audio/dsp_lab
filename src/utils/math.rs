@@ -28,7 +28,7 @@ pub fn x_fade(a: f64, x: f64, b: f64) -> f64 {
 /// Quadratic interpolation, for high quality (but slower) sample interpolation
 pub fn quad_interp(y_m: f64, y_0: f64, y_1: f64, x_01: f64) -> f64 {
     let x_01_clamp = x_01.clamp(0.0, 1.0);
-    let x_01_2 = x_01 * x_01;
+    let x_01_2 = x_01_clamp * x_01_clamp;
     let l_m = (x_01_2 - x_01) * 0.5;
     let l_0 = -x_01_2 + 1.0;
     let l_1 = (x_01_2 + x_01) * 0.5;
@@ -51,4 +51,41 @@ pub fn pre_post_gains(x: f64) -> (f64, f64) {
     } else {
         (1.0 + x, 1.0 / (1.0 + x))
     }
+}
+
+
+// === PHASE SHAPERS ===
+
+/// Asymmetric triangle shaper
+/// 
+/// Takes a phase as an input, and produces an asymmetric triangle wave, the
+/// symmetry is controlled by the "asym" parameter.
+/// 
+/// # Caveats
+/// For artifact-free operation, the phase input should be wrapped into the range
+/// [0, TAU]. Not complying with this requirement, will produce some distortion,
+/// but it is otherwise safe. Similarly, the asym parameter should be bounded by
+/// [0, 1.0], again this is not necessary for stability.
+pub fn asym_tri_shaper(phi: f64, asym: f64) -> f64 {
+    let two_phi = 2.0 * phi;
+    let two_m_a = 2.0 - asym;
+    let inv_2ma = 1.0 / two_m_a;
+    if      two_phi <= inv_2ma       { two_m_a * two_phi }
+    else if two_phi <= 2.0 - inv_2ma { 1.0 - two_m_a / (1.0 - asym) * (two_phi - inv_2ma) }
+    else                             { two_m_a * (two_phi - 2.0) }
+}
+
+/// Parabolic sine approximation
+/// 
+/// Takes a phase as an input, and produces a parabolic sine approximation. It
+/// is much faster than sin, but produces some extra harmonics. It's great for
+/// LFO's and analog sounding sine waves. It is extremely fast.
+/// 
+/// # Caveats
+/// For artifact-free operation, the phase input should be wrapped into the range
+/// [0, TAU].
+pub fn par_shaper(phi: f64) -> f64 {
+    let fgh = 0.25 - (phi - 0.25).abs();
+    let tgh = 1.0 - 2.0*fgh.abs();
+    8.0 * fgh * tgh
 }

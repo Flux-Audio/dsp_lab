@@ -1,4 +1,7 @@
 use crate::traits::{Process, Source};
+use crate::core::osc::RampCore;
+
+use std::f64::consts;
 
 /// Generate random u64, this is used to implement all other chaotic
 /// processes (except for physical modelling chaos)
@@ -19,10 +22,10 @@ impl RandomCore {
     /// and low quality, but it's good enough for audio.
     pub fn reseed(&mut self, seed: u8) {
         let start_state = seed & 0x0f;
-        let skips = (seed & 0xf0) >> 4 + 3;
+        let skips = ((seed & 0xf0) >> 4) + 1;
 
         // generate a new seed from combining previous state and new state
-        self.state = self.state & 0xff_ff_ff_ff_ff_ff_00 ^ start_state as u64 + 1;
+        self.state = start_state as u64 + 1;
         
         // mangle the new state a bit by shifting
         for _ in 0..skips{
@@ -128,6 +131,45 @@ impl Source<f64> for NoiseWhite {
         bits &= 0b0_00000000000_1111111111111111111111111111111111111111111111111111;
         bits |= 0b0_01111111110_0000000000000000000000000000000000000000000000000000;
         f64::from_bits(bits) * 2.0 - 1.0
+    }
+}
+
+
+/// Sample and hold random
+pub struct SnhRandom {
+    rng: NoiseWhite,
+    phase: f64,
+    rad_per_sec: f64,
+    sr: f64,
+    latch: f64,
+}
+
+impl SnhRandom {
+    pub fn new(sr: f64, seed: u8) -> Self {
+        Self {
+            rng: NoiseWhite::new(seed),
+            phase: 0.0,
+            rad_per_sec: 1.0,
+            sr: sr,
+            latch: 0.0,
+        }
+    }
+
+    /// Change the frequency of the generator, in hertz. This is a method and
+    /// not a field, because the frequency is stored internally as radians per second.
+    pub fn set_freq(&mut self, freq: f64) {
+        self.rad_per_sec = freq * consts::TAU;
+    }
+}
+
+impl Source<f64> for SnhRandom {
+    fn step(&mut self) -> f64 {
+        self.phase += self.rad_per_sec / self.sr;
+        if self.phase >= consts::TAU {
+            self.phase -= consts::TAU;
+            self.latch = self.rng.step();
+        }
+        return self.latch;
     }
 }
 
