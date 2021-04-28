@@ -2,6 +2,7 @@ use std::f64::consts;
 
 use crate::traits::Process;
 use crate::traits::Source;
+use crate::utils::math::{asym_tri_shaper, par_shaper};
 
 // === RAMP CORE ===
 
@@ -53,7 +54,63 @@ impl Source<f64> for RampCore {
 
 /// Variable symmetry trianlge oscillator. The `asym` control, makes the rising
 /// and falling slopes different, at the extreme (1.0), it turns into a saw wave.
-pub struct VarTriOsc {
-
+pub struct AsymTriOsc {
+    osc: RampCore,
+    asym: f64,
 }
 
+impl AsymTriOsc {
+    pub fn new(init_phase: f64, sr: f64) -> Self {
+        Self {
+            osc: RampCore::new(init_phase, 0.0, sr),
+            asym: 0.0,
+        }
+    }
+
+    /// Reset phase to `init_phase`
+    pub fn reset(&mut self) {
+        self.osc.reset();
+    }
+
+    pub fn set_freq(&mut self, freq: f64) {
+        self.osc.set_freq(freq);
+    }
+}
+
+impl Source<f64> for AsymTriOsc {
+    fn step(&mut self) -> f64 {
+        asym_tri_shaper(self.osc.step(), self.asym)
+    }
+}
+
+
+/// Parabolic sine approximation oscillator. Much faster than true sine, but has
+/// a bit of saturation. Can actually sound very nice as an analog sine.
+pub struct ParOsc {
+    osc: RampCore,
+}
+
+impl ParOsc {
+    pub fn new(init_phase: f64, sr: f64) -> Self {
+        Self {
+            osc: RampCore::new(init_phase, 0.0, sr),
+        }
+    }
+
+    /// Reset phase to `init_phase`
+    pub fn reset(&mut self) {
+        self.osc.reset();
+    }
+
+    /// Change the frequency of the oscillator, in hertz. This is a method and
+    /// not a field, because the frequency is stored internally as radians per second.
+    pub fn set_freq(&mut self, freq: f64) {
+        self.osc.set_freq(freq);
+    }
+}
+
+impl Source<f64> for ParOsc {
+    fn step(&mut self) -> f64 {
+        par_shaper(self.osc.step())
+    }
+}
