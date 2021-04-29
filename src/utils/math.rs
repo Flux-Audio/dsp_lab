@@ -1,6 +1,9 @@
 //! Various mathematical pure functions that are not included in Rust's standard
 //! library and fast versions of cmath functions.
 
+use std::f64::consts;
+
+const FRAC_1_TAU: f64 = 1.0 / consts::TAU;
 
 /// Fast sigmoid. This is not the same as tanh, but quite close. It uses the
 /// infamous quake inverse square root, but f64. I left the comments in for
@@ -66,7 +69,8 @@ pub fn pre_post_gains(x: f64) -> (f64, f64) {
 /// [0, TAU]. Not complying with this requirement, will produce some distortion,
 /// but it is otherwise safe. Similarly, the asym parameter should be bounded by
 /// [0, 1.0], again this is not necessary for stability.
-pub fn asym_tri_shaper(phi: f64, asym: f64) -> f64 {
+pub fn asym_tri_shaper(mut phi: f64, asym: f64) -> f64 {
+    phi *= FRAC_1_TAU;
     let two_phi = 2.0 * phi;
     let two_m_a = 2.0 - asym;
     let inv_2ma = 1.0 / two_m_a;
@@ -84,7 +88,8 @@ pub fn asym_tri_shaper(phi: f64, asym: f64) -> f64 {
 /// # Caveats
 /// For artifact-free operation, the phase input should be wrapped into the range
 /// [0, TAU].
-pub fn par_shaper(phi: f64) -> f64 {
+pub fn par_shaper(mut phi: f64) -> f64 {
+    phi *= FRAC_1_TAU;
     let fgh = 0.25 - (phi - 0.25).abs();
     let tgh = 1.0 - 2.0*fgh.abs();
     8.0 * fgh * tgh

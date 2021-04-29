@@ -199,6 +199,42 @@ mod tests {
         assert!(acc > 0.45 && acc < 0.55);
     }
 
+    #[test]
+    fn test_ramp_core() {
+        use crate::core::osc::RampCore;
+        use crate::traits::Source;
+        use std::f64::consts;
+        let mut ramp = RampCore::new(0.0, 1.0, 1000.0);
+        for _ in 0..2001 {
+            assert!(ramp.step() <= consts::TAU);
+        }
+        assert!(ramp.step() <= 0.01);
+    }
+
+    #[test]
+    fn test_par_osc() {
+        use crate::core::osc::ParOsc;
+        use crate::traits::Source;
+        let mut osc = ParOsc::new(0.0, 1000.0);
+        osc.set_freq(1.0);
+        for _ in 0..2001 {
+            assert!(osc.step() <= 1.0);
+        }
+        assert!(osc.step() <= 0.01);
+    }
+
+    #[test]
+    fn test_asym_tri_osc() {
+        use crate::core::osc::AsymTriOsc;
+        use crate::traits::Source;
+        let mut osc = AsymTriOsc::new(0.0, 1000.0);
+        osc.set_freq(1.0);
+        for _ in 0..2001 {
+            assert!(osc.step() <= 1.0);
+        }
+        assert!(osc.step() <= 0.01);
+    }
+
     #[bench]
     fn bench_std_tanh(b: &mut test::Bencher) {
         let range = test::black_box(100);
