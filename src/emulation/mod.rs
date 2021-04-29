@@ -16,6 +16,7 @@
 pub mod tape;       // real magnetic tape modelling, with read/write heads
 
 use crate::traits::Process;
+use crate::utils::math::fast_sigmoid;
 
 /// Models magnetic hysteresis found in transformer cores and magnetic tape.
 /// Sub-modules depend on this
@@ -61,11 +62,8 @@ impl Process<f64> for Hysteresis{
         */
 
         // hysteresis loop equations
-        let y_an: f64 = input.abs()
-                             .powf(1.0/(1.0 - self.sq))
-                             .tanh()
-                             .powf(1.0 - self.sq)
-                             * input.signum();
+        let y_an: f64 = fast_sigmoid(input.abs().powf(1.0/(1.0 - self.sq)))
+                      .powf(1.0 - self.sq) * input.signum();
 
         let y: f64 = self.y_p + (y_an - self.y_p) * dx.abs() / k;
         
