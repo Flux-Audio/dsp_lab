@@ -171,31 +171,35 @@ impl SvfBandStop {
 
 /// Single pole, no zero lowpass. Extremely subtle and extremely cheap
 pub struct LowPass1P {
+    a0: f64,
     b1: f64,
-    z1: f64,
-    inv_sr: f64,
+    y_z1: f64,
+    two_inv_sr: f64,
 }
 
 impl LowPass1P {
     pub fn new(sr: f64) -> Self {
         Self {
+            a0: 0.0,
             b1: 0.0,
-            z1: 0.0,
-            inv_sr: 1.0 / sr,
+            y_z1: 0.0,
+            two_inv_sr: 2.0 / sr,
         }
     }
 
     /// Set 3dB cutoff point in hertz.
     pub fn set_cutoff(&mut self, cut: f64) {
-        let cut_rad = -consts::TAU * cut * self.inv_sr;
-        self.b1 = cut_rad.exp();
+        let fc = (cut * self.two_inv_sr).clamp(0.0, 1.0);
+        self.b1 = (-consts::TAU * fc).exp();
+        self.a0 = 1.0 - self.b1;
     }
 }
 
 impl Process<f64> for LowPass1P {
-    fn step(&mut self, input: f64) -> f64 {
-        self.z1 += self.b1 * (input - self.z1);
-        return self.z1;
+    fn step(&mut self, x: f64) -> f64 {
+        self.y_z1 = self.a0 * x 
+                  + self.b1 * self.y_z1;
+        return self.y_z1;
     }
 }
 
