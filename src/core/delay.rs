@@ -116,19 +116,19 @@ impl Process<f64> for DelayLine {
         // Step 1: read previous values from read heads
         let accumulator = self.head_offsets.iter()
             .zip(self.head_gains.iter())
-            .map(|(a, b)| {println!("{}", a); match self.interp_mode {
+            .map(|(a, b)| { match self.interp_mode {
                     InterpMethod::Truncate => 
-                        self.vector[*a as usize]*b,
+                        self.vector[*a as usize] * b,
                     InterpMethod::NearestNeighbor => 
-                        self.vector[(*a).round() as usize]*b,
+                        self.vector[(*a).round() as usize] * b,
                     InterpMethod::Linear => {
-                        let i = (*a).floor() as usize;
+                        let i = ((*a).floor() as usize).clamp(0, self.num - 1);
                         let x = *a - i as f64;
-                        math::x_fade(self.vector[i], x, self.vector[i + 1])},
+                        math::x_fade(self.vector[i], x, self.vector[i + 1]) * b},
                     InterpMethod::Quadratic => {
-                        let i = (*a).floor() as usize;
+                        let i = ((*a).floor() as usize).clamp(1, self.num - 1);
                         let x = *a - i as f64;
-                        math::quad_interp(self.vector[i - 1], self.vector[i], self.vector[i + 1], x)},
+                        math::quad_interp(self.vector[i - 1], self.vector[i], self.vector[i + 1], x) * b},
                 }})
             .sum::<f64>() / match self.mix_mode {
                 MixMethod::Sum => 1.0,
