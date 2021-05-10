@@ -82,6 +82,10 @@ impl SvfLowPass {
             res: 0.0,
         }
     }
+
+    pub fn set_sr(&mut self, sr: f64) {
+        self.core.sr = sr;
+    }
 }
 
 
@@ -109,6 +113,10 @@ impl SvfHighPass {
             cutoff: 0.0,
             res: 0.0,
         }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) {
+        self.core.sr = sr;
     }
 }
 
@@ -138,6 +146,10 @@ impl SvfBandPass {
             res: 0.0,
         }
     }
+
+    pub fn set_sr(&mut self, sr: f64) {
+        self.core.sr = sr;
+    }
 }
 
 
@@ -165,6 +177,10 @@ impl SvfBandStop {
             cutoff: 0.0,
             res: 0.0,
         }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) {
+        self.core.sr = sr;
     }
 }
 
