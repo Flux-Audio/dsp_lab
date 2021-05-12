@@ -194,13 +194,21 @@ pub struct LowPass1P {
 }
 
 impl LowPass1P {
-    pub fn new(sr: f64) -> Self {
+
+    /// constructor
+    ///
+    /// defaults to sample_rate at 44100.0, cutoff at 0Hz.
+    pub fn new() -> Self {
         Self {
             a0: 0.0,
             b1: 0.0,
             y_z1: 0.0,
-            two_inv_sr: 2.0 / sr,
+            two_inv_sr: 2.0 / 44100.0,
         }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) {
+        self.two_inv_sr = 2.0 / sr;
     }
 
     /// Set 3dB cutoff point in hertz.
@@ -225,10 +233,14 @@ pub struct DcBlock { lp: LowPass1P, }
 
 impl DcBlock {
     /// Initialize filter state variables.
-    pub fn new(sr: f64) -> Self {
-        let mut ret = Self { lp: LowPass1P::new(sr), };
+    pub fn new() -> Self {
+        let mut ret = Self { lp: LowPass1P::new(), };
         ret.lp.set_cutoff(10.0);
         return ret;
+    }
+
+    pub fn set_sr(&mut self, sr: f64) {
+        self.lp.set_sr(sr);
     }
 }
 
