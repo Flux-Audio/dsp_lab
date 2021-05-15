@@ -9,6 +9,58 @@ use std::f64::consts;
 use crate::traits::Process;
 use crate::chain;
 
+
+/// Discrete sample differentiator
+/// 
+/// # Caveats
+/// This is not sample-rate aware, i.e. it does not scale the volume, i.e. it is
+/// not a derivative.
+pub struct Diff { z1: f64 }
+
+impl Diff {
+    pub fn new() -> Self {
+        Self {
+            z1: 0.0,
+        }
+    }
+}
+
+impl Process<f64> for Diff {
+    fn step(&mut self, input: f64) -> f64 {
+        let ret = input - self.z1;
+        self.z1 = input;
+        return self.z1;
+    } 
+}
+
+
+/// Discrete leaky sample intetrator
+/// 
+/// # Caveats
+/// This is not sample-rate aware, i.e. it does not scale the volume, i.e. it is
+/// not a continuous integral.
+pub struct LeakyInt {
+    z1: f64,
+    pass: f64,
+}
+
+impl LeakyInt {
+    pub fn new(leak: f64, state: f64) -> Self {
+        Self {
+            z1: state,
+            pass: 1.0 - leak, 
+        }
+    }
+}
+
+impl Process<f64> for LeakyInt {
+    fn step(&mut self, input: f64) -> f64 {
+        self.z1 = self.z1 * self.pass + input;
+        return self.z1;
+    }
+}
+
+
 // 2-pole state variable filter. Implements lowpass, highpass, notch and
 // bandpass filters with shared state. Is used internally by filter processes.
 struct SvfCore {

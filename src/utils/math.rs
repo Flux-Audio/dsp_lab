@@ -57,6 +57,17 @@ pub fn pre_post_gains(x: f64) -> (f64, f64) {
 }
 
 
+/// Variable hardness clipper/saturator
+/// 
+/// `h` controls the hardness of the clipping, where values approaching 1.0
+/// approximate a hard-clip curve, values around 0.5 resemble a `tanh()` curve, 
+/// and values below 0.5 resemble a log curve.
+pub fn var_clip(x: f64, h: f64) -> f64 {
+    let s = (1.0 - h).clamp(1e-30, 1.0);
+    x.abs() / (1.0 + x.abs().powf(1.0 / s)).powf(s) * x.signum()
+}
+
+
 // === PHASE SHAPERS ===
 
 /// Asymmetric triangle shaper
