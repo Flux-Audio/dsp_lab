@@ -13,12 +13,6 @@ within the framework is either a process or a chain. A process can also contain
 instances of chains, which themselves contain processes.
 */
 
-#![feature(is_subnormal)]
-#![feature(test)]
-
-extern crate test;
-use test::Bencher;
-
 pub mod traits;
 pub mod utils;
 pub mod core;
@@ -233,36 +227,5 @@ mod tests {
             assert!(osc.step() <= 1.0);
         }
         assert!(osc.step() <= 0.01);
-    }
-
-    #[bench]
-    fn bench_std_tanh(b: &mut test::Bencher) {
-        let range = test::black_box(100);
-        let mut _a = 0.0;   // garbage variable to prevent optimization
-
-        b.iter(|| {
-            for b in 0..range {
-                _a += (b as f64 * 0.002).tanh();
-            }
-
-            // prevent optimizing away entire test body, by black-boxing return
-            test::black_box(_a)
-        });
-    }
-    
-    #[bench]
-    fn bench_fast_sigmoid(b: &mut test::Bencher) {
-        use crate::utils::math::fast_sigmoid;
-        let range = test::black_box(100);
-        let mut _a = 0.0;   // garbage variable to prevent optimization
-
-        b.iter(|| {
-            for b in 0..range {
-                _a += fast_sigmoid(b as f64 * 0.002);
-            }
-
-            // prevent optimizing away entire test body, by black-boxing return
-            test::black_box(_a)
-        });
     }
 }
