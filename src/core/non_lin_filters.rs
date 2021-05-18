@@ -15,7 +15,7 @@ impl SlewClip1 {
     pub fn new() -> Self {
         Self {
             diff: Diff::new(),
-            int:  LeakyInt::new(0.01, 0.0),
+            int:  LeakyInt::new(0.03, 0.0),
             sr_scale: 1.0,
             dt_scale: 1.0,
             hardness: 0.5,
