@@ -29,7 +29,7 @@ impl Process<f64> for Diff {
     fn step(&mut self, input: f64) -> f64 {
         let ret = input - self.z1;
         self.z1 = input;
-        return self.z1;
+        return ret;
     } 
 }
 
