@@ -25,7 +25,7 @@ impl SlewClip1 {
 
     pub fn set_sr(&mut self, sr: f64) {
         self.sr_scale = sr / 44100.0;
-        self.dt_scale = 44100.0 / sr;
+        self.dt_scale = 44100.0 / sr.clamp(1.0, std::f64::MAX);
     }
 }
 
