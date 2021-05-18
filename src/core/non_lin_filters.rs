@@ -34,9 +34,10 @@ impl Process<f64> for SlewClip1 {
         let post_gain = 1.0 - self.drive;
         let pre_gain  = 1.0 / post_gain;
 
-        let dx = self.diff.step(input) * self.sr_scale;
-        let dx_sat = var_clip(dx * pre_gain, self.hardness);
-        self.int.step(dx_sat * post_gain) * self.dt_scale
+        // let dx = self.diff.step(input) * self.sr_scale;
+        // let dx_sat = var_clip(dx * pre_gain, self.hardness);
+        // self.int.step(dx_sat * post_gain) * self.dt_scale
+        var_clip(input * pre_gain, self.hardness) * post_gain
     }
 }
 
