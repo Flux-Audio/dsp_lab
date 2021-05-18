@@ -32,7 +32,7 @@ impl SlewClip1 {
 impl Process<f64> for SlewClip1 {
     fn step(&mut self, input: f64) -> f64 {
         let post_gain = 1.0 - self.drive;
-        let pre_gain  = 1.0 / post_gain;
+        let pre_gain  = 1.0 / post_gain.clamp(1e-30, 1.0);
 
         let dx = self.diff.step(input) * self.sr_scale;
         let dx_sat = var_clip(dx * pre_gain, self.hardness);
