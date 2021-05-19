@@ -57,8 +57,8 @@ impl SlewClip2 {
         Self {
             diff1: Diff::new(),
             diff2: Diff::new(),
-            int1:  LeakyInt::new(0.02, 0.0),
-            int2:  LeakyInt::new(0.02, 0.0),
+            int1:  LeakyInt::new(0.08, 0.0),
+            int2:  LeakyInt::new(0.08, 0.0),
             sr_scale: 1.0,
             dt_scale: 1.0,
             hardness: 0.5,
