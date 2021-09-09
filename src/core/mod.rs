@@ -1,17 +1,18 @@
 //! This module contains basic processes that are needed in most signal chains.
 
+// TODO: uncomment when ready
 // pub mod integrators;         TODO:
 // pub mod derivatives;         TODO:
-pub mod lin_filter;            // linear filters
-pub mod non_lin_filters;       // non-linear filters, like slew limiters, rolling median
-pub mod osc;
+// pub mod lin_filter;            // linear filters
+// pub mod non_lin_filters;       // non-linear filters, like slew limiters, rolling median
+// pub mod osc;
 // pub mod envelopes;           TODO:
-pub mod chaos;                  // random and noise
-pub mod delay;               // TODO: delay line with interpolation
+// pub mod chaos;                  // random and noise
+// pub mod delay;               // TODO: delay line with interpolation
 // pub mod fft;                 TODO:
 
 use crate::traits::{Process, Source};
-use crate::core::chaos::RandomToggle;
+// use crate::core::chaos::RandomToggle;        TODO: uncomment when ready
 use num::Float;
 use std::os::raw::{c_double, c_int};
 
@@ -33,7 +34,7 @@ impl Source<f64> for EmptySource {
     fn step(&mut self) -> f64 { 1.0 }
 }
 
-
+/* TODO: uncomment when ready
 /// Denormal-blocking dither.
 /// 
 /// Replaces numbers close to zero and denormals with random small (around 1e-30) 
@@ -63,6 +64,7 @@ impl Source<f64> for EmptySource {
 pub struct DenormalDither {
     rng: RandomToggle,
 }
+
 
 impl DenormalDither {
     pub fn new(seed: u8) -> Self {
@@ -134,4 +136,4 @@ impl PostDither {
         }
     }
 }
-*/
+*/*/
