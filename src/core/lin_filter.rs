@@ -371,7 +371,7 @@ impl Process<f64> for BiquadLowPass {
         let omega = f_to_omega(f, self.sr);
         let c = omega.cos();
         let s = omega.sin();
-        let q = r_to_q(self.res);
+        let q = r_to_q(self.res) + 0.01;
         let alpha = s / (2.0 * q);
 
         let b_0 = (1.0 - c) / 2.0;
