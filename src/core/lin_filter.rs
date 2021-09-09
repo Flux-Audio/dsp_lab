@@ -9,6 +9,7 @@ use std::collections::VecDeque;
 
 use crate::traits::Process;
 use crate::chain;
+use crate::utils::conversion::f_to_omega;
 
 
 // === BASICS ===
@@ -356,6 +357,46 @@ impl BiquadCore {
 }
 
 
+pub struct BiquadLowPass {
+    core: BiquadCore,
+    pub cutoff: f64,
+    pub res: f64,
+    pub sr: f64,
+}
+
+impl Process<f64> for BiquadLowPass {
+    fn step(&mut self, input: f64) -> f64 {
+        // clamp cutoff at nyquist
+        let f = self.cutoff.clamp(0.0, self.sr/2.0);
+        let omega = f_to_omega(f, self.sr);
+        let c = omega.cos();
+        let s = omega.sin();
+        let q = 1.0 - self.res.clamp(0.0, 1.0);
+        let alpha = s / (2.0 * q);
+
+        let b_0 = (1.0 - c) / 2.0;
+        let b_1 = 1.0 - c;
+        let b_2 = b_0;
+        let a_0 = 1.0 + alpha;
+        let a_1 = -2.0 * c;
+        let a_2 = 1.0 - alpha;
+
+        self.core.filter(input, [a_0, a_1, a_2], [b_0, b_1, b_2])
+    }
+}
+
+impl BiquadLowPass {
+    pub fn new() -> Self {
+        Self {
+            core: BiquadCore::new(),
+            cutoff: 440.0,
+            res: 0.3,
+            sr: 44100.0,
+        }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+}
 
 /* FIXME: this has some borrow errors to fix
 /// Nested all-pass filter, with dynamic corner frequency
