@@ -9,7 +9,7 @@ use std::collections::VecDeque;
 
 use crate::traits::Process;
 use crate::chain;
-use crate::utils::conversion::f_to_omega;
+use crate::utils::conversion::{f_to_omega, r_to_q};
 
 
 // === BASICS ===
@@ -371,7 +371,7 @@ impl Process<f64> for BiquadLowPass {
         let omega = f_to_omega(f, self.sr);
         let c = omega.cos();
         let s = omega.sin();
-        let q = self.res * 2.0 + 0.1;//1.0 - self.res.clamp(0.0, 1.0);
+        let q = r_to_q(self.res);
         let alpha = s / (2.0 * q);
 
         let b_0 = (1.0 - c) / 2.0;
