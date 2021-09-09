@@ -247,4 +247,36 @@ mod tests {
         }
         assert!(osc.step() <= 0.01);
     }
+
+    #[test]
+    fn test_raw_ring_buffer() {
+        use crate::core::RawRingBuffer;
+        let mut buf = RawRingBuffer::<4>::new();
+        buf.push(1.0);
+        buf.push(2.0);
+        buf.push(3.0);
+        buf.push(4.0);
+        buf.push(5.0);
+        assert!(buf[0] == 5.0);
+        assert!(buf[1] == 4.0);
+        assert!(buf[2] == 3.0);
+        assert!(buf[3] == 2.0);
+    }
+
+    #[test]
+    fn test_safe_raw_ring_buffer() {
+        use crate::core::SafeRawRingBuffer;
+        assert!(SafeRawRingBuffer::<6>::new().is_none());
+        let mut buf = SafeRawRingBuffer::<4>::new().unwrap();
+        buf.push(1.0);
+        buf.push(2.0);
+        buf.push(3.0);
+        buf.push(4.0);
+        buf.push(5.0);
+        assert!(buf.get(0) == Some(5.0));
+        assert!(buf.get(1) == Some(4.0));
+        assert!(buf.get(2) == Some(3.0));
+        assert!(buf.get(3) == Some(2.0));
+        assert!(buf.get(4).is_none());
+    }
 }

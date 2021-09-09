@@ -1,9 +1,50 @@
 //! this module contains reverb primitives
 
+mod primes;
+
 use std::collections::VecDeque;
 use crate::traits::{Process, Source};
 use crate::core::chaos::NoiseWhite;
+use crate::core::RawRingBuffer;
+use crate::core::reverb::primes::PRIMES;
 
+/// Maximum density diffuser, has a delay tap at every prime number. Length
+/// determines how many delay taps are used.
+/// 
+/// # Caveats
+/// This is designed to work on a fixed sample rate of 44100 Hz. It will work
+/// on other sample rates, but it will sound different. It is suggested that
+/// you downsample before using this.
+pub struct DenseDiffuser {
+    buff: RawRingBuffer<32768>,
+    size: f64,
+}
+
+impl DenseDiffuser {
+    pub fn new() -> Self {
+        Self {
+            buff: RawRingBuffer::<32768>::new(),
+            size: 0.5,
+        }
+    }
+}
+
+impl Process<f64> for DenseDiffuser {
+    fn step(&mut self, input: f64) -> f64 {
+        // rotate internal buffer
+        self.buff.push(input);
+
+        // return sum of all prime taps up to num
+        let num = (self.size * PRIMES.len() as f64) as usize;
+        let mut accum = 0.0;
+        for i in 0..num {
+            accum += self.buff.get(i);
+        }
+        accum
+    }
+}
+
+// TODO: this is terribly inefficient, use FFT
 pub struct FirBlurFlat {
     delay_line: VecDeque<f64>,
     max_size: usize,
@@ -41,14 +82,40 @@ impl Process<f64> for FirBlurFlat {
     }
 }
 
+struct FirBlurLinear {}
+struct FirBlurQuad {}
 
-
-
-struct FirBlurLinear {
-
+/*
+pub struct NestedAP {
+    next: Option<Box<Self>>,
+    delay_line: VecDeque<f64>,
+    corner_f: f64,
+    sr: f64,
 }
 
+impl NestedAP {
+    /// Initialize filter state
+    pub fn new(depth: u16) -> Self {
+        let mut ret = Self { 
+            next: None, 
+            delay_line: VecDeque::with_capacity(96000),
+            corner_f: 440.0,
+            sr: 44100.0
+        };
+        if depth > 1 {
+            ret.next = Some(Box::new(Self::new(depth - 1)));
+        }
+        return ret;
+    }
 
-struct FirBlurQuad {
-
+    pub fn set_sr(&mut self, sr: f64) {
+        self.sr = sr;
+        match &self.next {
+            None => {},
+            Some(n) => {
+                n.set_sr(sr);
+            }
+        };
+    }
 }
+*/
