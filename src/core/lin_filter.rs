@@ -9,7 +9,7 @@ use std::collections::VecDeque;
 
 use crate::traits::Process;
 use crate::chain;
-use crate::utils::conversion::{f_to_omega, r_to_q};
+use crate::utils::conversion::{f_to_omega, r_to_q, db_to_gain};
 
 
 // === BASICS ===
@@ -356,7 +356,6 @@ impl BiquadCore {
     }
 }
 
-
 pub struct BiquadLowPass {
     core: BiquadCore,
     pub cutoff: f64,
@@ -397,6 +396,305 @@ impl BiquadLowPass {
 
     pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
 }
+
+pub struct BiquadHighPass {
+    core: BiquadCore,
+    pub cutoff: f64,
+    pub res: f64,
+    pub sr: f64,
+}
+
+impl Process<f64> for BiquadHighPass {
+    fn step(&mut self, input: f64) -> f64 {
+        // clamp cutoff at nyquist
+        let f = self.cutoff.clamp(0.0, self.sr/2.0);
+        let omega = f_to_omega(f, self.sr);
+        let c = omega.cos();
+        let s = omega.sin();
+        let q = r_to_q(self.res) + 0.01;
+        let alpha = s / (2.0 * q);
+
+        let b_0 = (1.0 + c) / 2.0;
+        let b_1 = -(1.0 + c);
+        let b_2 = b_0;
+        let a_0 = 1.0 + alpha;
+        let a_1 = -2.0 * c;
+        let a_2 = 1.0 - alpha;
+
+        self.core.filter(input, [a_0, a_1, a_2], [b_0, b_1, b_2])
+    }
+}
+
+impl BiquadHighPass {
+    pub fn new() -> Self {
+        Self {
+            core: BiquadCore::new(),
+            cutoff: 440.0,
+            res: 0.3,
+            sr: 44100.0,
+        }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+}
+
+pub struct BiquadBandPass {
+    core: BiquadCore,
+    pub cutoff: f64,
+    pub res: f64,
+    pub sr: f64,
+}
+
+impl Process<f64> for BiquadBandPass {
+    fn step(&mut self, input: f64) -> f64 {
+        // clamp cutoff at nyquist
+        let f = self.cutoff.clamp(0.0, self.sr/2.0);
+        let omega = f_to_omega(f, self.sr);
+        let c = omega.cos();
+        let s = omega.sin();
+        let q = r_to_q(self.res) + 0.01;
+        let alpha = s / (2.0 * q);
+
+        let b_0 = alpha;
+        let b_1 = 0.0;
+        let b_2 = -alpha;
+        let a_0 = 1.0 + alpha;
+        let a_1 = -2.0 * c;
+        let a_2 = 1.0 - alpha;
+
+        self.core.filter(input, [a_0, a_1, a_2], [b_0, b_1, b_2])
+    }
+}
+
+impl BiquadBandPass {
+    pub fn new() -> Self {
+        Self {
+            core: BiquadCore::new(),
+            cutoff: 440.0,
+            res: 0.3,
+            sr: 44100.0,
+        }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+}
+
+pub struct BiquadNotch {
+    core: BiquadCore,
+    pub cutoff: f64,
+    pub res: f64,
+    pub sr: f64,
+}
+
+impl Process<f64> for BiquadNotch {
+    fn step(&mut self, input: f64) -> f64 {
+        // clamp cutoff at nyquist
+        let f = self.cutoff.clamp(0.0, self.sr/2.0);
+        let omega = f_to_omega(f, self.sr);
+        let c = omega.cos();
+        let s = omega.sin();
+        let q = r_to_q(self.res) + 0.01;
+        let alpha = s / (2.0 * q);
+
+        let b_0 = 1.0;
+        let b_1 = -2.0 * c;
+        let b_2 = 1.0;
+        let a_0 = 1.0 + alpha;
+        let a_1 = -2.0 * c;
+        let a_2 = 1.0 - alpha;
+
+        self.core.filter(input, [a_0, a_1, a_2], [b_0, b_1, b_2])
+    }
+}
+
+impl BiquadNotch {
+    pub fn new() -> Self {
+        Self {
+            core: BiquadCore::new(),
+            cutoff: 440.0,
+            res: 0.3,
+            sr: 44100.0,
+        }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+}
+
+pub struct BiquadAllPass {
+    core: BiquadCore,
+    pub cutoff: f64,
+    pub res: f64,
+    pub sr: f64,
+}
+
+impl Process<f64> for BiquadAllPass {
+    fn step(&mut self, input: f64) -> f64 {
+        // clamp cutoff at nyquist
+        let f = self.cutoff.clamp(0.0, self.sr/2.0);
+        let omega = f_to_omega(f, self.sr);
+        let c = omega.cos();
+        let s = omega.sin();
+        let q = r_to_q(self.res) + 0.01;
+        let alpha = s / (2.0 * q);
+
+        let b_0 = 1.0 - alpha;
+        let b_1 = -2.0 * c;
+        let b_2 = 1.0 + alpha;
+        let a_0 = 1.0 + alpha;
+        let a_1 = -2.0 * c;
+        let a_2 = 1.0 - alpha;
+
+        self.core.filter(input, [a_0, a_1, a_2], [b_0, b_1, b_2])
+    }
+}
+
+impl BiquadAllPass {
+    pub fn new() -> Self {
+        Self {
+            core: BiquadCore::new(),
+            cutoff: 440.0,
+            res: 0.3,
+            sr: 44100.0,
+        }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+}
+
+pub struct BiquadPeaking {
+    core: BiquadCore,
+    pub cutoff: f64,
+    pub res: f64,
+    pub sr: f64,
+    pub db_gain: f64,
+}
+
+impl Process<f64> for BiquadPeaking {
+    fn step(&mut self, input: f64) -> f64 {
+        // clamp cutoff at nyquist
+        let f = self.cutoff.clamp(0.0, self.sr/2.0);
+        let omega = f_to_omega(f, self.sr);
+        let c = omega.cos();
+        let s = omega.sin();
+        let q = r_to_q(self.res) + 0.01;
+        let amp = db_to_gain(self.db_gain);
+        let alpha = s / (2.0 * q);
+
+        let b_0 = 1.0 + alpha * amp;
+        let b_1 = -2.0 * c;
+        let b_2 = 1.0 - alpha * amp;
+        let a_0 = 1.0 + alpha / amp;
+        let a_1 = -2.0 * c;
+        let a_2 = 1.0 - alpha / amp;
+
+        self.core.filter(input, [a_0, a_1, a_2], [b_0, b_1, b_2])
+    }
+}
+
+impl BiquadPeaking {
+    pub fn new() -> Self {
+        Self {
+            core: BiquadCore::new(),
+            cutoff: 440.0,
+            res: 0.3,
+            sr: 44100.0,
+            db_gain: 0.0,
+        }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+}
+
+pub struct BiquadLowShelf {
+    core: BiquadCore,
+    pub cutoff: f64,
+    pub res: f64,
+    pub sr: f64,
+    pub db_gain: f64,
+}
+
+impl Process<f64> for BiquadLowShelf {
+    fn step(&mut self, input: f64) -> f64 {
+        // clamp cutoff at nyquist
+        let f = self.cutoff.clamp(0.0, self.sr/2.0);
+        let omega = f_to_omega(f, self.sr);
+        let c = omega.cos();
+        let s = omega.sin();
+        let q = r_to_q(self.res) + 0.01;
+        let amp = db_to_gain(self.db_gain);
+        let alpha = s * 0.5 * ((amp + 1.0 / amp) * (1.0 / q - 1.0) + 2.0).sqrt();
+        let aux_shelf = 2.0 * alpha * amp.sqrt();
+
+        let b_0 = amp * ((amp + 1.0) - (amp - 1.0) * c + aux_shelf);
+        let b_1 = 2.0 * amp * ((amp - 1.0) - (amp + 1.0) * c);
+        let b_2 = amp * ((amp + 1.0) - (amp - 1.0) * c - aux_shelf);
+        let a_0 = (amp + 1.0) + (amp - 1.0) * c + aux_shelf;
+        let a_1 = -2.0 * ((amp - 1.0) + (amp + 1.0) * c);
+        let a_2 = (amp + 1.0) + (amp - 1.0) * c - aux_shelf;
+
+        self.core.filter(input, [a_0, a_1, a_2], [b_0, b_1, b_2])
+    }
+}
+
+impl BiquadLowShelf {
+    pub fn new() -> Self {
+        Self {
+            core: BiquadCore::new(),
+            cutoff: 440.0,
+            res: 0.3,
+            sr: 44100.0,
+            db_gain: 0.0,
+        }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+}
+
+pub struct BiquadHighShelf {
+    core: BiquadCore,
+    pub cutoff: f64,
+    pub res: f64,
+    pub sr: f64,
+    pub db_gain: f64,
+}
+
+impl Process<f64> for BiquadHighShelf {
+    fn step(&mut self, input: f64) -> f64 {
+        // clamp cutoff at nyquist
+        let f = self.cutoff.clamp(0.0, self.sr/2.0);
+        let omega = f_to_omega(f, self.sr);
+        let c = omega.cos();
+        let s = omega.sin();
+        let q = r_to_q(self.res) + 0.01;
+        let amp = db_to_gain(self.db_gain);
+        let alpha = s * 0.5 * ((amp + 1.0 / amp) * (1.0 / q - 1.0) + 2.0).sqrt();
+        let aux_shelf = 2.0 * alpha * amp.sqrt();
+
+        let b_0 = amp * ((amp + 1.0) + (amp - 1.0) * c + aux_shelf);
+        let b_1 = 2.0 * amp * ((amp - 1.0) + (amp + 1.0) * c);
+        let b_2 = amp * ((amp + 1.0) + (amp - 1.0) * c - aux_shelf);
+        let a_0 = (amp + 1.0) - (amp - 1.0) * c + aux_shelf;
+        let a_1 = -2.0 * ((amp - 1.0) - (amp + 1.0) * c);
+        let a_2 = (amp + 1.0) - (amp - 1.0) * c - aux_shelf;
+
+        self.core.filter(input, [a_0, a_1, a_2], [b_0, b_1, b_2])
+    }
+}
+
+impl BiquadHighShelf {
+    pub fn new() -> Self {
+        Self {
+            core: BiquadCore::new(),
+            cutoff: 440.0,
+            res: 0.3,
+            sr: 44100.0,
+            db_gain: 0.0,
+        }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+}
+
 
 /* FIXME: this has some borrow errors to fix
 /// Nested all-pass filter, with dynamic corner frequency

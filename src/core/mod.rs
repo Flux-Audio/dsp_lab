@@ -9,6 +9,7 @@ pub mod osc;
 pub mod chaos;                  // random and noise
 pub mod delay;               // TODO: delay line with interpolation
 // pub mod fft;                 TODO:
+pub mod reverb;                 // reverb primitives
 
 use crate::traits::{Process, Source};
 // use crate::core::chaos::RandomToggle;        TODO: uncomment when ready
