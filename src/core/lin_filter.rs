@@ -1,10 +1,11 @@
 //! Linear filters.
 //! 
-//! + 1-pole high-pass and low-pass topologies  TODO:
+//! + 1-pole high-pass and low-pass topologies
 //! + 2-pole filters, based on an Svf core
 //! + Generic FIR filters   TODO:
 
 use std::f64::consts;
+use std::collections::VecDeque;
 
 use crate::traits::Process;
 use crate::chain;
@@ -34,7 +35,7 @@ impl Process<f64> for Diff {
 }
 
 
-/// Discrete leaky sample intetrator
+/// Discrete leaky sample integrator
 /// 
 /// # Caveats
 /// This is not sample-rate aware, i.e. it does not scale the volume, i.e. it is
@@ -302,3 +303,40 @@ impl Process<f64> for DcBlock {
         input - chain!(input => lp)
     }
 }
+
+/* FIXME: this has some borrow errors to fix
+/// Nested all-pass filter, with dynamic corner frequency
+pub struct NestedAP {
+    next: Option<Box<Self>>,
+    delay_line: VecDeque<f64>,
+    corner_f: f64,
+    sr: f64,
+}
+
+impl NestedAP {
+    /// Initialize filter state
+    pub fn new(depth: u16) -> Self {
+        let mut ret = Self { 
+            next: None, 
+            delay_line: VecDeque::with_capacity(96000),
+            corner_f: 440.0,
+            sr: 44100.0
+        };
+        if depth > 1 {
+            ret.next = Some(Box::new(Self::new(depth - 1)));
+        }
+        return ret;
+    }
+
+    pub fn set_sr(&mut self, sr: f64) {
+        self.sr = sr;
+        match &self.next {
+            None => {},
+            Some(n) => {
+                n.set_sr(sr);
+            }
+        };
+    }
+
+}
+*/
