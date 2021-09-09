@@ -19,7 +19,7 @@ where T: Float
 
     /// Allows chaining of effects, by having:
     /// ```
-    /// use dsp_lab::traits::{Process, ProcessChain};
+    /// use dsp_lab::traits::{ProcessChain};
     /// use dsp_lab::core::{EmptyProcess};
     /// let mut p1 = EmptyProcess{};
     /// let mut p2 = EmptyProcess{};

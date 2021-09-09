@@ -16,10 +16,10 @@ instances of chains, which themselves contain processes.
 pub mod traits;
 
 
-//pub mod utils;
+pub mod utils;
 pub mod core;
-//pub mod effects;
-//pub mod emulation;
+pub mod effects;
+pub mod emulation;
 
 /// This macro is used to build signal chains.
 /// 
@@ -75,6 +75,8 @@ pub mod core;
 /// # }
 /// ```
 #[macro_export]
+#[deprecated(since="0.2.0", note="Deprecated since macros cannot use the self
+keyword. Use ProcessChain instead.")]
 macro_rules! chain {
     // Base case: single function call
     { $arg:expr => $p:ident } => {
@@ -121,6 +123,8 @@ macro_rules! chain {
 /// # }
 /// ```
 #[macro_export]
+#[deprecated(since="0.2.0", note="Deprecated since macros cannot use the self
+keyword. Use SourceChain instead.")]
 macro_rules! chain_src {
     // Base case: parse source, and pass expression to chain!
     { $src:ident => $($tokens:tt)* } => {
@@ -141,7 +145,7 @@ mod tests {
 
     #[test]
     fn test_process_chain() {
-        use crate::traits::{Process, ProcessChain};
+        use crate::traits::{ProcessChain};
         use crate::core::{EmptyProcess};
         let mut p1 = EmptyProcess{};
         let mut p2 = EmptyProcess{};
@@ -152,8 +156,6 @@ mod tests {
         assert!(res == 1.0);
     }
 
-    /*
-    FIXME: all these tests are broken at the moment
     #[test]
     fn test_random_core() {
         use crate::core::chaos::RandomCore;
@@ -245,5 +247,4 @@ mod tests {
         }
         assert!(osc.step() <= 0.01);
     }
-    */
 }

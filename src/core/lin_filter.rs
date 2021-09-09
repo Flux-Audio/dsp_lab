@@ -11,6 +11,9 @@ use crate::traits::Process;
 use crate::chain;
 
 
+// === BASICS ===
+
+// TODO: replace with sample-rate aware diff
 /// Discrete sample differentiator
 /// 
 /// # Caveats
@@ -35,6 +38,7 @@ impl Process<f64> for Diff {
 }
 
 
+// TODO: replace with sample-rate aware leaky int
 /// Discrete leaky sample integrator
 /// 
 /// # Caveats
@@ -62,6 +66,8 @@ impl Process<f64> for LeakyInt {
 }
 
 
+// === SVF CORE 2-POLE FILTERS ===
+
 // 2-pole state variable filter. Implements lowpass, highpass, notch and
 // bandpass filters with shared state. Is used internally by filter processes.
 struct SvfCore {
@@ -76,7 +82,7 @@ struct SvfCore {
 
 impl SvfCore {
     /// Initialize filter state variables.
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             lp: 0.0,
             hp: 0.0,
@@ -90,7 +96,7 @@ impl SvfCore {
 
     // Compute lowpass, highpass, notch and bandpass filtering of input with
     // variable resonance and cutoff.
-    pub fn filter(&mut self, input: f64) {
+    fn filter(&mut self, input: f64) {
         // Pre-process
         let f = 2.0 * (std::f64::consts::PI * self.cutoff / self.sr).sin();
         let q = (1.0 - self.res) * 2.0;
@@ -238,6 +244,8 @@ impl SvfBandStop {
 }
 
 
+// === 1-POLE FILTERS ===
+
 /// Single pole, no zero lowpass. Extremely subtle and extremely cheap
 pub struct LowPass1P {
     a0: f64,
@@ -303,6 +311,51 @@ impl Process<f64> for DcBlock {
         input - chain!(input => lp)
     }
 }
+
+
+// === BIQUAD 2-POLE FILTERS ===
+
+struct BiquadCore {
+    x_z1: f64,
+    x_z2: f64,
+    y_z1: f64,
+    y_z2: f64,
+}
+
+impl BiquadCore {
+    fn new() -> Self {
+        Self {
+            x_z1: 0.0,
+            x_z2: 0.0,
+            y_z1: 0.0,
+            y_z2: 0.0,
+        }
+    }
+
+    fn filter(&mut self, x: f64, a: [f64; 3], b: [f64; 3]) -> f64 {
+        let a_0_rec = 1.0 / a[0];
+        let a_1 = a[1];
+        let a_2 = a[2];
+        let b_0 = b[0];
+        let b_1 = b[1];
+        let b_2 = b[2];
+
+        let res = b_0 * a_0_rec * x 
+                + b_1 * a_0_rec * self.x_z1 
+                + b_2 * a_0_rec * self.x_z2
+                - a_1 * a_0_rec * self.y_z1
+                - a_2 * a_0_rec * self.y_z2;
+        
+        self.x_z2 = self.x_z1;
+        self.x_z1 = x;
+        self.y_z2 = self.y_z1;
+        self.y_z1 = res;
+
+        res
+    }
+}
+
+
 
 /* FIXME: this has some borrow errors to fix
 /// Nested all-pass filter, with dynamic corner frequency
