@@ -279,4 +279,21 @@ mod tests {
         assert!(buf.get(3) == Some(2.0));
         assert!(buf.get(4).is_none());
     }
+
+    #[test]
+    fn test_dense_diffuser() {
+        use crate::core::reverb::DenseDiffuser;
+        use crate::traits::Process;
+        let mut diff = DenseDiffuser::new();
+        diff.size = 0.2;
+        diff.step(1.0);
+        let mut it_probably_works: bool = false;
+        for i in 0..100 {
+            let res = diff.step(0.0);
+            if res != 0.0 {
+                it_probably_works = true;
+            }
+        }
+        assert!(it_probably_works);
+    }
 }

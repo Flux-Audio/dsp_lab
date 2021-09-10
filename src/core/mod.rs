@@ -77,7 +77,7 @@ impl<const CAP: usize> RawRingBuffer<CAP> {
 
         // calculate index as an offset from write_ptr, with wrapping done with
         // fast bitwise modulo, possible because we enforce CAP to be a power of 2
-        let idx = (self.write_ptr - offs - 1) & (CAP - 1);
+        let idx = (self.write_ptr + CAP - offs - 1) & (CAP - 1);
         self.buffer[idx]
     }
 }
