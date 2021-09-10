@@ -17,7 +17,7 @@ use crate::core::reverb::primes::PRIMES;
 /// you downsample before using this.
 pub struct DenseDiffuser {
     buff: RawRingBuffer<32768>,
-    size: f64,
+    pub size: f64,
 }
 
 impl DenseDiffuser {
