@@ -251,7 +251,7 @@ mod tests {
     #[test]
     fn unit_test_raw_ring_buffer() {
         use crate::core::RawRingBuffer;
-        let mut buf = RawRingBuffer::<4>::new();
+        let mut buf = RawRingBuffer::new(4);
         buf.push(1.0);
         buf.push(2.0);
         buf.push(3.0);
@@ -268,7 +268,7 @@ mod tests {
         use crate::core::RawRingBuffer;
         use crate::core::chaos::NoiseWhite;
         use crate::traits::Source;
-        let mut buf = RawRingBuffer::<32768>::new();
+        let mut buf = RawRingBuffer::new(32768);
         let mut noise = NoiseWhite::new(4);
 
         for i in 0..1000000 {
@@ -282,8 +282,8 @@ mod tests {
     #[test]
     fn unit_test_safe_raw_ring_buffer() {
         use crate::core::SafeRawRingBuffer;
-        assert!(SafeRawRingBuffer::<6>::new().is_none());
-        let mut buf = SafeRawRingBuffer::<4>::new().unwrap();
+        assert!(SafeRawRingBuffer::new(6).is_none());
+        let mut buf = SafeRawRingBuffer::new(4).unwrap();
         buf.push(1.0);
         buf.push(2.0);
         buf.push(3.0);
@@ -347,28 +347,28 @@ mod tests {
     #[should_panic(expected = "assertion failed")]
     fn white_box_test_raw_ring_buffer_1() {
         use crate::core::RawRingBuffer;
-        let ring = RawRingBuffer::<0>::new();
+        let ring = RawRingBuffer::new(0);
     }
 
     #[test]
     #[should_panic(expected = "assertion failed")]
     fn white_box_test_raw_ring_buffer_2() {
         use crate::core::RawRingBuffer;
-        let ring = RawRingBuffer::<5>::new();
+        let ring = RawRingBuffer::new(5);
     }
 
     #[test]
     #[should_panic(expected = "assertion failed")]
     fn white_box_test_raw_ring_buffer_3() {
         use crate::core::RawRingBuffer;
-        let mut ring = RawRingBuffer::<4>::new();
+        let mut ring = RawRingBuffer::new(4);
         ring.get(4);
     }
 
     #[test]
     fn white_box_test_raw_ring_buffer_4() {
         use crate::core::RawRingBuffer;
-        let mut ring = RawRingBuffer::<4>::new();
+        let mut ring = RawRingBuffer::new(4);
         ring.get(3);
         ring.push(0.0);
         ring.get(3);
@@ -384,14 +384,14 @@ mod tests {
     #[should_panic(expected = "assertion failed")]
     fn white_box_test_raw_ring_buffer_5() {
         use crate::core::RawRingBuffer;
-        let ring = RawRingBuffer::<4>::new();
+        let ring = RawRingBuffer::new(4);
         ring[4];
     }
 
     #[test]
     fn white_box_test_raw_ring_buffer_6() {
         use crate::core::RawRingBuffer;
-        let mut ring = RawRingBuffer::<4>::new();
+        let mut ring = RawRingBuffer::new(4);
         ring[3];
         ring.push(0.0);
         ring[3];

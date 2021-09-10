@@ -40,20 +40,22 @@ impl Source<f64> for EmptySource {
 /// is the internal datastructure, a public API `SafeRawRingBuffer` is available, 
 /// which does softer error handling but may add overhead in cases where extreme 
 /// optimization is a requirement.
-pub struct RawRingBuffer<const CAP: usize> {
-    buffer: [f64; CAP],
+pub struct RawRingBuffer {
+    buffer: Vec<f64>,
+    cap: usize,
     write_ptr: usize,
 }
 
-impl<const CAP: usize> RawRingBuffer<CAP> {
+impl RawRingBuffer {
     /// Creates new stack allocated ring buffer, panics if CAP is not a power of
     /// two.
-    pub fn new() -> Self {
+    pub fn new(cap: usize) -> Self {
         // checks if CAP is a power of 2
-        assert!((CAP != 0) && ((CAP & (CAP - 1)) == 0));
+        assert!((cap != 0) && ((cap & (cap - 1)) == 0));
 
         Self {
-            buffer: [0.0; CAP],
+            buffer: vec![0.0; cap],
+            cap: cap,
             write_ptr: 0
         }
     }
@@ -65,7 +67,7 @@ impl<const CAP: usize> RawRingBuffer<CAP> {
 
         // increment and wrap pointer, with
         // fast bitwise modulo, possible because we enforce CAP to be a power of 2
-        self.write_ptr = (self.write_ptr + 1) & (CAP - 1);
+        self.write_ptr = (self.write_ptr + 1) & (self.cap - 1);
     }
 
     /// Returns value pointed at by `offs`, alternative to using the subscript
@@ -73,26 +75,26 @@ impl<const CAP: usize> RawRingBuffer<CAP> {
     /// Indexing starts at the newest addition to the buffer, higher indexes mean
     /// older values.
     pub fn get(&self, offs: usize) -> f64{
-        assert!(offs < CAP);
+        assert!(offs < self.cap);
 
         // calculate index as an offset from write_ptr, with wrapping done with
         // fast bitwise modulo, possible because we enforce CAP to be a power of 2
-        let idx = (self.write_ptr + CAP - offs - 1) & (CAP - 1);
+        let idx = (self.write_ptr + self.cap - offs - 1) & (self.cap - 1);
         self.buffer[idx]
     }
 }
 
-impl<const CAP: usize> Index<usize> for RawRingBuffer<CAP> {
+impl Index<usize> for RawRingBuffer {
     type Output = f64;
 
     /// When indexing, higher index means older values on the buffer. Indexing with
     /// 0 returns the newest item.
     fn index(&self, offs: usize) -> &Self::Output {
-        assert!(offs < CAP);
+        assert!(offs < self.cap);
 
         // calculate index as an offset from write_ptr, with wrapping done with
         // fast bitwise modulo, possible because we enforce CAP to be a power of 2
-        let idx = (self.write_ptr + CAP - offs - 1) & (CAP - 1);
+        let idx = (self.write_ptr + self.cap - offs - 1) & (self.cap - 1);
         &self.buffer[idx]
     }
 }
@@ -100,17 +102,19 @@ impl<const CAP: usize> Index<usize> for RawRingBuffer<CAP> {
 /// Wrapper for `RawRingBuffer` that doesn't panic if preconditions are not met,
 /// but has additional overhead because of `Option`. Should still be fast enough
 /// for almost any application.
-pub struct SafeRawRingBuffer<const CAP: usize> {
-    internal_buffer: RawRingBuffer<CAP>,
+pub struct SafeRawRingBuffer {
+    internal_buffer: RawRingBuffer,
+    cap: usize,
 }
 
-impl<const CAP: usize> SafeRawRingBuffer<CAP> {
+impl SafeRawRingBuffer {
     /// Creates a stack-allocated ring buffer. Returns None if size isn't a power
     /// of 2
-    pub fn new() -> Option<Self> {
-        if (CAP != 0) && ((CAP & (CAP - 1)) == 0) {
+    pub fn new(cap: usize) -> Option<Self> {
+        if (cap != 0) && ((cap & (cap - 1)) == 0) {
             Some(Self{
-                internal_buffer: RawRingBuffer::<CAP>::new()
+                internal_buffer: RawRingBuffer::new(cap),
+                cap: cap,
             })
         } else {
             None
@@ -125,7 +129,7 @@ impl<const CAP: usize> SafeRawRingBuffer<CAP> {
     /// Indexing starts at the newest addition to the buffer, higher indexes mean
     /// older values.
     pub fn get(&self, idx: usize) -> Option<f64> {
-        if idx < CAP {
+        if idx < self.cap {
             Some(self.internal_buffer[idx])
         } else {
             None
