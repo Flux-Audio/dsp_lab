@@ -16,14 +16,14 @@ use crate::core::reverb::primes::PRIMES;
 /// on other sample rates, but it will sound different. It is suggested that
 /// you downsample before using this.
 pub struct DenseDiffuser {
-    buff: RawRingBuffer,
+    buff: RawRingBuffer<16384>,
     pub size: f64,
 }
 
 impl DenseDiffuser {
     pub fn new() -> Self {
         Self {
-            buff: RawRingBuffer::new(32768),
+            buff: RawRingBuffer::<16384>::new(),
             size: 0.5,
         }
     }

@@ -40,22 +40,20 @@ impl Source<f64> for EmptySource {
 /// is the internal datastructure, a public API `SafeRawRingBuffer` is available, 
 /// which does softer error handling but may add overhead in cases where extreme 
 /// optimization is a requirement.
-pub struct RawRingBuffer {
-    buffer: Vec<f64>,
-    cap: usize,
+pub struct RawRingBuffer<const CAP: usize> {
+    buffer: [f64; CAP],
     write_ptr: usize,
 }
 
-impl RawRingBuffer {
+impl<const CAP: usize> RawRingBuffer<CAP> {
     /// Creates new stack allocated ring buffer, panics if CAP is not a power of
     /// two.
-    pub fn new(cap: usize) -> Self {
+    pub fn new() -> Self {
         // checks if CAP is a power of 2
-        assert!((cap != 0) && ((cap & (cap - 1)) == 0));
+        assert!((CAP != 0) && ((CAP & (CAP - 1)) == 0));
 
         Self {
-            buffer: vec![0.0; cap],
-            cap: cap,
+            buffer: [0.0; CAP],
             write_ptr: 0
         }
     }
@@ -67,7 +65,7 @@ impl RawRingBuffer {
 
         // increment and wrap pointer, with
         // fast bitwise modulo, possible because we enforce CAP to be a power of 2
-        self.write_ptr = (self.write_ptr + 1) & (self.cap - 1);
+        self.write_ptr = (self.write_ptr + 1) & (CAP - 1);
     }
 
     /// Returns value pointed at by `offs`, alternative to using the subscript
@@ -75,26 +73,26 @@ impl RawRingBuffer {
     /// Indexing starts at the newest addition to the buffer, higher indexes mean
     /// older values.
     pub fn get(&self, offs: usize) -> f64{
-        assert!(offs < self.cap);
+        assert!(offs < CAP);
 
         // calculate index as an offset from write_ptr, with wrapping done with
         // fast bitwise modulo, possible because we enforce CAP to be a power of 2
-        let idx = (self.write_ptr + self.cap - offs - 1) & (self.cap - 1);
+        let idx = (self.write_ptr + CAP - offs - 1) & (CAP - 1);
         self.buffer[idx]
     }
 }
 
-impl Index<usize> for RawRingBuffer {
+impl<const CAP: usize> Index<usize> for RawRingBuffer<CAP> {
     type Output = f64;
 
     /// When indexing, higher index means older values on the buffer. Indexing with
     /// 0 returns the newest item.
     fn index(&self, offs: usize) -> &Self::Output {
-        assert!(offs < self.cap);
+        assert!(offs < CAP);
 
         // calculate index as an offset from write_ptr, with wrapping done with
         // fast bitwise modulo, possible because we enforce CAP to be a power of 2
-        let idx = (self.write_ptr + self.cap - offs - 1) & (self.cap - 1);
+        let idx = (self.write_ptr + CAP - offs - 1) & (CAP - 1);
         &self.buffer[idx]
     }
 }
@@ -102,19 +100,17 @@ impl Index<usize> for RawRingBuffer {
 /// Wrapper for `RawRingBuffer` that doesn't panic if preconditions are not met,
 /// but has additional overhead because of `Option`. Should still be fast enough
 /// for almost any application.
-pub struct SafeRawRingBuffer {
-    internal_buffer: RawRingBuffer,
-    cap: usize,
+pub struct SafeRawRingBuffer<const CAP: usize> {
+    internal_buffer: RawRingBuffer<CAP>,
 }
 
-impl SafeRawRingBuffer {
+impl<const CAP: usize> SafeRawRingBuffer<CAP> {
     /// Creates a stack-allocated ring buffer. Returns None if size isn't a power
     /// of 2
-    pub fn new(cap: usize) -> Option<Self> {
-        if (cap != 0) && ((cap & (cap - 1)) == 0) {
+    pub fn new() -> Option<Self> {
+        if (CAP != 0) && ((CAP & (CAP - 1)) == 0) {
             Some(Self{
-                internal_buffer: RawRingBuffer::new(cap),
-                cap: cap,
+                internal_buffer: RawRingBuffer::<CAP>::new()
             })
         } else {
             None
@@ -129,7 +125,7 @@ impl SafeRawRingBuffer {
     /// Indexing starts at the newest addition to the buffer, higher indexes mean
     /// older values.
     pub fn get(&self, idx: usize) -> Option<f64> {
-        if idx < self.cap {
+        if idx < CAP {
             Some(self.internal_buffer[idx])
         } else {
             None
