@@ -35,16 +35,13 @@ impl Process<f64> for DenseDiffuser {
         self.buff.push(input);
 
         // return sum of all prime taps up to num
+        let range = (self.size.clamp(0.0, 1.0) * 1027.0) as usize;
         let mut accum = 0.0;
-        let mut count = 0;
-        for i in 0..1028 {
-            accum += self.buff.get(i);
-            count += 1;
-            if (i as f64 / 1028.0) > self.size {
-                break;
-            }
+        for i in 0..range {
+            let idx = PRIMES[i];
+            accum += self.buff.get(idx);
         }
-        accum / (count as f64).sqrt()
+        accum / (range as f64).sqrt()
     }
 }
 
