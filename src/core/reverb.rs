@@ -1,12 +1,12 @@
 //! this module contains reverb primitives
 
-mod primes;
+mod tuning;
 
 use std::collections::VecDeque;
 use crate::traits::{Process, Source};
 use crate::core::chaos::NoiseWhite;
 use crate::core::RawRingBuffer;
-use crate::core::reverb::primes::{PRIMES, HO_PRIMES};
+use crate::core::reverb::tuning::{PRIMES, HO_PRIMES, DENSE_COEFFS, SPARSE_COEFFS};
 
 /// Maximum density diffuser, has a delay tap at every prime number. Length
 /// determines how many delay taps are used.
@@ -42,9 +42,10 @@ impl Process<f64> for DenseFirDiffuser {
         let mut accum = 0.0;
         for i in 0..range {
             let idx = PRIMES[i];
-            accum += self.buff.get(idx);
+            let coeff = DENSE_COEFFS[i];
+            accum += self.buff[idx] * coeff;
         }
-        accum / (range as f64).sqrt()
+        accum
     }
 }
 
@@ -72,9 +73,10 @@ impl Process<f64> for SparseFirDiffuser {
         let mut accum = 0.0;
         for i in 0..range {
             let idx = HO_PRIMES[i];
-            accum += self.buff.get(idx);
+            let coeff = SPARSE_COEFFS[i];
+            accum += self.buff[idx] * coeff;
         }
-        accum / (range as f64).sqrt()
+        accum
     }
 }
 
