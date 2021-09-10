@@ -298,9 +298,9 @@ mod tests {
 
     #[test]
     fn unit_test_dense_diffuser() {
-        use crate::core::reverb::DenseDiffuser;
+        use crate::core::reverb::DenseFirDiffuser;
         use crate::traits::Process;
-        let mut diff = DenseDiffuser::new();
+        let mut diff = DenseFirDiffuser::new();
         diff.size = 0.2;
         diff.step(1.0);
         let mut it_probably_works: bool = false;
@@ -329,11 +329,11 @@ mod tests {
 
     #[test]
     fn stress_test_dense_diffuser() {
-        use crate::core::reverb::DenseDiffuser;
+        use crate::core::reverb::DenseFirDiffuser;
         use crate::traits::Process;
         use crate::traits::Source;
         use crate::core::chaos::NoiseWhite;
-        let mut diff = DenseDiffuser::new();
+        let mut diff = DenseFirDiffuser::new();
         let mut noise = NoiseWhite::new(5);
         diff.size = 1.0;
 

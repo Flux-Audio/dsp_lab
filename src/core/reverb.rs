@@ -6,7 +6,7 @@ use std::collections::VecDeque;
 use crate::traits::{Process, Source};
 use crate::core::chaos::NoiseWhite;
 use crate::core::RawRingBuffer;
-use crate::core::reverb::primes::PRIMES;
+use crate::core::reverb::primes::{PRIMES, HO_PRIMES};
 
 /// Maximum density diffuser, has a delay tap at every prime number. Length
 /// determines how many delay taps are used.
@@ -15,12 +15,15 @@ use crate::core::reverb::primes::PRIMES;
 /// This is designed to work on a fixed sample rate of 44100 Hz. It will work
 /// on other sample rates, but it will sound different. It is suggested that
 /// you downsample before using this.
-pub struct DenseDiffuser {
+/// 
+/// It is also very CPU intensive on `opt-level=0`, but in `opt-level=3` it is
+/// instead extremely efficient.
+pub struct DenseFirDiffuser {
     buff: RawRingBuffer<8192>,
     pub size: f64,
 }
 
-impl DenseDiffuser {
+impl DenseFirDiffuser {
     pub fn new() -> Self {
         Self {
             buff: RawRingBuffer::<8192>::new(),
@@ -29,7 +32,7 @@ impl DenseDiffuser {
     }
 }
 
-impl Process<f64> for DenseDiffuser {
+impl Process<f64> for DenseFirDiffuser {
     fn step(&mut self, input: f64) -> f64 {
         // rotate internal buffer
         self.buff.push(input);
@@ -39,6 +42,36 @@ impl Process<f64> for DenseDiffuser {
         let mut accum = 0.0;
         for i in 0..range {
             let idx = PRIMES[i];
+            accum += self.buff.get(idx);
+        }
+        accum / (range as f64).sqrt()
+    }
+}
+
+pub struct SparseFirDiffuser {
+    buff: RawRingBuffer<16384>,
+    pub size: f64,
+}
+
+impl SparseFirDiffuser {
+    pub fn new() -> Self {
+        Self {
+            buff: RawRingBuffer::<16384>::new(),
+            size: 0.5,
+        }
+    }
+}
+
+impl Process<f64> for SparseFirDiffuser {
+    fn step(&mut self, input: f64) -> f64 {
+        // rotate internal buffer
+        self.buff.push(input);
+
+        // return sum of all prime taps up to num
+        let range = (self.size.clamp(0.0, 1.0) * 289.0) as usize;
+        let mut accum = 0.0;
+        for i in 0..range {
+            let idx = HO_PRIMES[i];
             accum += self.buff.get(idx);
         }
         accum / (range as f64).sqrt()
