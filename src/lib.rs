@@ -144,7 +144,7 @@ macro_rules! chain_src {
 mod tests {
 
     #[test]
-    fn test_process_chain() {
+    fn unit_test_process_chain() {
         use crate::traits::{ProcessChain};
         use crate::core::{EmptyProcess};
         let mut p1 = EmptyProcess{};
@@ -157,7 +157,7 @@ mod tests {
     }
 
     #[test]
-    fn test_random_core() {
+    fn unit_test_random_core() {
         use crate::core::chaos::RandomCore;
         let mut rng1 = RandomCore::new();
         let mut rng2 = RandomCore::new();
@@ -167,7 +167,7 @@ mod tests {
     }
 
     #[test]
-    fn test_random_coin() {
+    fn unit_test_random_coin() {
         use crate::core::chaos::RandomCoin;
         use crate::traits::Source;
         let mut coin = RandomCoin::new(11_u8);
@@ -178,7 +178,7 @@ mod tests {
     }
 
     # [test]
-    fn test_random_toggle() {
+    fn unit_test_random_toggle() {
         use crate::core::chaos::RandomToggle;
         use crate::traits::Source;
         let mut toggle = RandomToggle::new(11_u8);
@@ -197,7 +197,7 @@ mod tests {
     }
 
     #[test]
-    fn test_noise_white() {
+    fn unit_test_noise_white() {
         use crate::core::chaos::NoiseWhite;
         use crate::traits::Source;
         let mut nse = NoiseWhite::new(11);
@@ -213,7 +213,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ramp_core() {
+    fn unit_test_ramp_core() {
         use crate::core::osc::RampCore;
         use crate::traits::Source;
         use std::f64::consts;
@@ -225,7 +225,7 @@ mod tests {
     }
 
     #[test]
-    fn test_par_osc() {
+    fn unit_test_par_osc() {
         use crate::core::osc::ParOsc;
         use crate::traits::Source;
         let mut osc = ParOsc::new(0.0, 1000.0);
@@ -237,7 +237,7 @@ mod tests {
     }
 
     #[test]
-    fn test_asym_tri_osc() {
+    fn unit_test_asym_tri_osc() {
         use crate::core::osc::AsymTriOsc;
         use crate::traits::Source;
         let mut osc = AsymTriOsc::new(0.0, 1000.0);
@@ -249,7 +249,7 @@ mod tests {
     }
 
     #[test]
-    fn test_raw_ring_buffer() {
+    fn unit_test_raw_ring_buffer() {
         use crate::core::RawRingBuffer;
         let mut buf = RawRingBuffer::<4>::new();
         buf.push(1.0);
@@ -264,7 +264,23 @@ mod tests {
     }
 
     #[test]
-    fn test_safe_raw_ring_buffer() {
+    fn stress_test_raw_ring_buffer() {
+        use crate::core::RawRingBuffer;
+        use crate::core::chaos::NoiseWhite;
+        use crate::traits::Source;
+        let mut buf = RawRingBuffer::<32768>::new();
+        let mut noise = NoiseWhite::new(4);
+
+        for i in 0..1000000 {
+            let idx = (i*11 + 73) % 32768;
+            buf.push(noise.step());
+            assert!(buf.get(idx) == buf[idx]);
+            assert!(buf.get(idx) <= 1.0 && buf.get(idx) >= -1.0);
+        }
+    }
+
+    #[test]
+    fn unit_test_safe_raw_ring_buffer() {
         use crate::core::SafeRawRingBuffer;
         assert!(SafeRawRingBuffer::<6>::new().is_none());
         let mut buf = SafeRawRingBuffer::<4>::new().unwrap();
@@ -281,7 +297,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dense_diffuser() {
+    fn unit_test_dense_diffuser() {
         use crate::core::reverb::DenseDiffuser;
         use crate::traits::Process;
         let mut diff = DenseDiffuser::new();
@@ -326,4 +342,66 @@ mod tests {
             diff.step(noise.step());
         }
     }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn white_box_test_raw_ring_buffer_1() {
+        use crate::core::RawRingBuffer;
+        let ring = RawRingBuffer::<0>::new();
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn white_box_test_raw_ring_buffer_2() {
+        use crate::core::RawRingBuffer;
+        let ring = RawRingBuffer::<5>::new();
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn white_box_test_raw_ring_buffer_3() {
+        use crate::core::RawRingBuffer;
+        let mut ring = RawRingBuffer::<4>::new();
+        ring.get(4);
+    }
+
+    #[test]
+    fn white_box_test_raw_ring_buffer_4() {
+        use crate::core::RawRingBuffer;
+        let mut ring = RawRingBuffer::<4>::new();
+        ring.get(3);
+        ring.push(0.0);
+        ring.get(3);
+        ring.push(0.0);
+        ring.get(3);
+        ring.push(0.0);
+        ring.get(3);
+        ring.push(0.0);
+        ring.get(3);
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn white_box_test_raw_ring_buffer_5() {
+        use crate::core::RawRingBuffer;
+        let ring = RawRingBuffer::<4>::new();
+        ring[4];
+    }
+
+    #[test]
+    fn white_box_test_raw_ring_buffer_6() {
+        use crate::core::RawRingBuffer;
+        let mut ring = RawRingBuffer::<4>::new();
+        ring[3];
+        ring.push(0.0);
+        ring[3];
+        ring.push(0.0);
+        ring[3];
+        ring.push(0.0);
+        ring[3];
+        ring.push(0.0);
+        ring[3];
+    }
+
+
 }

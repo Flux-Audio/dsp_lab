@@ -73,7 +73,7 @@ impl<const CAP: usize> RawRingBuffer<CAP> {
     /// Indexing starts at the newest addition to the buffer, higher indexes mean
     /// older values.
     pub fn get(&self, offs: usize) -> f64{
-        assert!(offs <= CAP);
+        assert!(offs < CAP);
 
         // calculate index as an offset from write_ptr, with wrapping done with
         // fast bitwise modulo, possible because we enforce CAP to be a power of 2
