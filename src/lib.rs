@@ -288,12 +288,42 @@ mod tests {
         diff.size = 0.2;
         diff.step(1.0);
         let mut it_probably_works: bool = false;
-        for i in 0..100 {
+        for _ in 0..100000 {
             let res = diff.step(0.0);
             if res != 0.0 {
                 it_probably_works = true;
             }
         }
         assert!(it_probably_works);
+
+        diff.size = 1.0;
+        diff.step(1.0);
+        it_probably_works = false;
+        for _ in 0..100000 {
+            let res = diff.step(0.0);
+            if res != 0.0 {
+                it_probably_works = true;
+            }
+        }
+        assert!(it_probably_works);
+
+        diff.size = 10.0;
+        diff.step(1.0);
+    }
+
+    #[test]
+    fn stress_test_dense_diffuser() {
+        use crate::core::reverb::DenseDiffuser;
+        use crate::traits::Process;
+        use crate::traits::Source;
+        use crate::core::chaos::NoiseWhite;
+        let mut diff = DenseDiffuser::new();
+        let mut noise = NoiseWhite::new(5);
+        diff.size = 1.0;
+
+        for i in 0..100000 {
+            diff.size = ((i + 73) % 89) as f64 / 89.0;
+            diff.step(noise.step());
+        }
     }
 }
