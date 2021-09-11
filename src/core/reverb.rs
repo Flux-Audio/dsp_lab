@@ -48,12 +48,7 @@ use crate::core::chaos::NoiseWhite;
 use crate::core::RawRingBuffer;
 use crate::core::reverb::tuning::{PRIMES, HO_PRIMES, SPARSE_A, SPARSE_B, SPARSE_C, 
     SPARSE_D, SPARSE_E, SPARSE_F, SPARSE_G, SPARSE_H};
-
-pub enum ScaleMethod {
-    Off,
-    Perceptual,
-    Unity,
-}
+use crate::shared_enums::{InterpMethod, Polarization, ScaleMethod};
 
 pub enum TuningVectors {
     A,
@@ -64,12 +59,6 @@ pub enum TuningVectors {
     F,
     G,
     H,
-}
-
-pub enum Polarization {
-    Unity,
-    Zero,
-    NegativeUnity,
 }
 
 /// Maximum density diffuser, has a delay tap at every prime number. Length
@@ -83,7 +72,7 @@ pub enum Polarization {
 /// It is also very CPU intensive on `opt-level=0`, but in `opt-level=3` it is
 /// instead extremely efficient.
 pub struct DenseFirDiffuser {
-    buff: Box<RawRingBuffer<8192>>,
+    buff: RawRingBuffer<8192>,
     pub size: f64,
     pub scale_mode: ScaleMethod,
 }
@@ -91,7 +80,7 @@ pub struct DenseFirDiffuser {
 impl DenseFirDiffuser {
     pub fn new() -> Self {
         Self {
-            buff: Box::new(RawRingBuffer::<8192>::new()),
+            buff: RawRingBuffer::<8192>::new(),
             size: 0.5,
             scale_mode: ScaleMethod::Unity,
         }
@@ -123,7 +112,7 @@ impl Process<f64> for DenseFirDiffuser {
 
 
 pub struct SparseFirDiffuser {
-    buff: Box<RawRingBuffer<16384>>,
+    buff: RawRingBuffer<16384>,
     pub size: f64,
     pub scale_mode: ScaleMethod,
 }
@@ -131,7 +120,7 @@ pub struct SparseFirDiffuser {
 impl SparseFirDiffuser {
     pub fn new() -> Self {
         Self {
-            buff: Box::new(RawRingBuffer::<16384>::new()),
+            buff: RawRingBuffer::<16384>::new(),
             size: 0.5,
             scale_mode: ScaleMethod::Unity,
         }
@@ -163,7 +152,7 @@ impl Process<f64> for SparseFirDiffuser {
 
 
 pub struct PolarizedFirDiffuser {
-    buff: Box<RawRingBuffer<16384>>,
+    buff: RawRingBuffer<16384>,
     pub size: f64,
     pub positive_tuning: TuningVectors,
     pub negative_tuning: TuningVectors,
@@ -174,7 +163,7 @@ pub struct PolarizedFirDiffuser {
 impl PolarizedFirDiffuser {
     pub fn new() -> Self {
         Self {
-            buff: Box::new(RawRingBuffer::<16384>::new()),
+            buff: RawRingBuffer::<16384>::new(),
             size: 0.5,
             positive_tuning: TuningVectors::A,
             negative_tuning: TuningVectors::B,

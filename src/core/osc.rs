@@ -2,16 +2,17 @@ use std::f64::consts;
 
 use crate::traits::Process;
 use crate::traits::Source;
+use crate::traits::ProcessChain;
 use crate::utils::math::{asym_tri_shaper, par_shaper};
+use crate::core::lin_filter::{BiquadLowPass};
 
 // === RAMP CORE ===
 
 /// Phase ramp for driving all oscillators in this module
 pub struct RampCore{
-    init_phase: f64,
     phase: f64,
     rad_per_sec: f64,
-    sr: f64,
+    pub sr: f64,
 }
 
 impl RampCore {
@@ -19,18 +20,12 @@ impl RampCore {
     /// - `init_phase`: initial phase of the oscillator, also when reset
     /// - `freq`: frequency in hertz of the oscillator
     /// - `sr`: host sample rate, or sample rate at which `.step()` will be called.
-    pub fn new(init_phase: f64, freq: f64, sr: f64) -> Self {
+    pub fn new() -> Self {
         Self {
-            init_phase:  init_phase.rem_euclid(consts::TAU),
-            phase:       init_phase.rem_euclid(consts::TAU),
-            rad_per_sec: freq*consts::TAU,
-            sr:          sr,
+            phase:       0.0,
+            rad_per_sec: 440.0 * consts::TAU,
+            sr:          44100.0,
         }
-    }
-
-    /// Reset phase to `init_phase`
-    pub fn reset(&mut self) {
-        self.phase = self.init_phase;
     }
 
     /// Change the frequency of the oscillator, in hertz. This is a method and
@@ -38,6 +33,13 @@ impl RampCore {
     pub fn set_freq(&mut self, freq: f64) {
         self.rad_per_sec = freq*consts::TAU;
     }
+
+    /// Change the phase of the oscillator, in radians.
+    pub fn set_phase(&mut self, phase: f64) {
+        self.phase = phase.rem_euclid(consts::TAU);
+    }
+
+
 }
 
 impl Source<f64> for RampCore {
@@ -52,34 +54,60 @@ impl Source<f64> for RampCore {
 
 // === BASIC SHAPES ===
 
+// TODO: extend morphing so that it can both be a saw and a ramp
 /// Variable symmetry trianlge oscillator. The `asym` control, makes the rising
 /// and falling slopes different, at the extreme (1.0), it turns into a saw wave.
 pub struct AsymTriOsc {
     osc: RampCore,
-    asym: f64,
+    downsampling_lp_1: BiquadLowPass,
+    downsampling_lp_2: BiquadLowPass,
+    downsampling_lp_3: BiquadLowPass,
+    pub oversampling: u8,
+    pub asym: f64,
 }
 
 impl AsymTriOsc {
-    pub fn new(init_phase: f64, sr: f64) -> Self {
+    pub fn new() -> Self {
         Self {
-            osc: RampCore::new(init_phase, 0.0, sr),
+            osc: RampCore::new(),
+            downsampling_lp_1: BiquadLowPass::new(),
+            downsampling_lp_2: BiquadLowPass::new(),
+            downsampling_lp_3: BiquadLowPass::new(),
+            oversampling: 1,
             asym: 0.0,
         }
     }
 
-    /// Reset phase to `init_phase`
-    pub fn reset(&mut self) {
-        self.osc.reset();
+    pub fn set_sr(&mut self, sr: f64) {
+        self.osc.sr = sr * self.oversampling as f64;
+        self.downsampling_lp_1.set_sr(sr * self.oversampling as f64);
+        self.downsampling_lp_2.set_sr(sr * self.oversampling as f64);
+        self.downsampling_lp_3.set_sr(sr * self.oversampling as f64);
+        self.downsampling_lp_1.cutoff = sr * 0.48;
+        self.downsampling_lp_2.cutoff = sr * 0.48;
+        self.downsampling_lp_3.cutoff = sr * 0.48;
     }
 
     pub fn set_freq(&mut self, freq: f64) {
         self.osc.set_freq(freq);
     }
+
+    pub fn set_phase(&mut self, phase: f64) {
+        self.osc.set_phase(phase);
+    }
 }
 
 impl Source<f64> for AsymTriOsc {
     fn step(&mut self) -> f64 {
-        asym_tri_shaper(self.osc.step(), self.asym)
+        let mut res = 0.0;
+        for _ in 0..self.oversampling {
+            res = ProcessChain::new(asym_tri_shaper(self.osc.step(), self.asym))
+                .pipe(&mut self.downsampling_lp_1)
+                .pipe(&mut self.downsampling_lp_2)
+                .pipe(&mut self.downsampling_lp_3)
+                .consume();
+        }
+        res
     }
 }
 
@@ -88,29 +116,57 @@ impl Source<f64> for AsymTriOsc {
 /// a bit of saturation. Can actually sound very nice as an analog sine.
 pub struct ParOsc {
     osc: RampCore,
+    downsampling_lp_1: BiquadLowPass,
+    downsampling_lp_2: BiquadLowPass,
+    downsampling_lp_3: BiquadLowPass,
+    pub oversampling: u8,
+    pub asym: f64,
 }
 
 impl ParOsc {
-    pub fn new(init_phase: f64, sr: f64) -> Self {
+    pub fn new() -> Self {
         Self {
-            osc: RampCore::new(init_phase, 0.0, sr),
+            osc: RampCore::new(),
+            downsampling_lp_1: BiquadLowPass::new(),
+            downsampling_lp_2: BiquadLowPass::new(),
+            downsampling_lp_3: BiquadLowPass::new(),
+            oversampling: 1,
+            asym: 0.0,
         }
     }
 
-    /// Reset phase to `init_phase`
-    pub fn reset(&mut self) {
-        self.osc.reset();
+    pub fn set_sr(&mut self, sr: f64) {
+        self.osc.sr = sr * self.oversampling as f64;
+        self.downsampling_lp_1.set_sr(sr * self.oversampling as f64);
+        self.downsampling_lp_2.set_sr(sr * self.oversampling as f64);
+        self.downsampling_lp_3.set_sr(sr * self.oversampling as f64);
+        self.downsampling_lp_1.cutoff = sr * 0.48;
+        self.downsampling_lp_2.cutoff = sr * 0.48;
+        self.downsampling_lp_3.cutoff = sr * 0.48;
     }
 
-    /// Change the frequency of the oscillator, in hertz. This is a method and
-    /// not a field, because the frequency is stored internally as radians per second.
     pub fn set_freq(&mut self, freq: f64) {
         self.osc.set_freq(freq);
+    }
+
+    pub fn set_phase(&mut self, phase: f64) {
+        self.osc.set_phase(phase);
     }
 }
 
 impl Source<f64> for ParOsc {
     fn step(&mut self) -> f64 {
-        par_shaper(self.osc.step())
+        let mut res = 0.0;
+        for _ in 0..self.oversampling {
+            res = ProcessChain::new(par_shaper(self.osc.step()))
+                .pipe(&mut self.downsampling_lp_1)
+                .pipe(&mut self.downsampling_lp_2)
+                .pipe(&mut self.downsampling_lp_3)
+                .consume();
+        }
+        res
     }
 }
+
+
+// TODO: pulse oscillator

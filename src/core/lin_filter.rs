@@ -359,7 +359,7 @@ impl BiquadCore {
 pub struct BiquadLowPass {
     core: BiquadCore,
     pub cutoff: f64,
-    pub res: f64,
+    pub q: f64,
     pub sr: f64,
 }
 
@@ -370,8 +370,7 @@ impl Process<f64> for BiquadLowPass {
         let omega = f_to_omega(f, self.sr);
         let c = omega.cos();
         let s = omega.sin();
-        let q = r_to_q(self.res) + 0.01;
-        let alpha = s / (2.0 * q);
+        let alpha = s / (2.0 * self.q);
 
         let b_0 = (1.0 - c) / 2.0;
         let b_1 = 1.0 - c;
@@ -389,18 +388,22 @@ impl BiquadLowPass {
         Self {
             core: BiquadCore::new(),
             cutoff: 440.0,
-            res: 0.3,
+            q: 0.707,
             sr: 44100.0,
         }
     }
 
     pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+
+    /// Allows to set the Q-factor by giving a resonance parameter between 0 and 1
+    /// resembling the resonance setting of an analog filter.
+    pub fn set_res(&mut self, res: f64) { self.q = r_to_q(res) + 0.01; }
 }
 
 pub struct BiquadHighPass {
     core: BiquadCore,
     pub cutoff: f64,
-    pub res: f64,
+    pub q: f64,
     pub sr: f64,
 }
 
@@ -411,8 +414,7 @@ impl Process<f64> for BiquadHighPass {
         let omega = f_to_omega(f, self.sr);
         let c = omega.cos();
         let s = omega.sin();
-        let q = r_to_q(self.res) + 0.01;
-        let alpha = s / (2.0 * q);
+        let alpha = s / (2.0 * self.q);
 
         let b_0 = (1.0 + c) / 2.0;
         let b_1 = -(1.0 + c);
@@ -430,18 +432,22 @@ impl BiquadHighPass {
         Self {
             core: BiquadCore::new(),
             cutoff: 440.0,
-            res: 0.3,
+            q: 0.707,
             sr: 44100.0,
         }
     }
 
     pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+
+    /// Allows to set the Q-factor by giving a resonance parameter between 0 and 1
+    /// resembling the resonance setting of an analog filter.
+    pub fn set_res(&mut self, res: f64) { self.q = r_to_q(res) + 0.01; }
 }
 
 pub struct BiquadBandPass {
     core: BiquadCore,
     pub cutoff: f64,
-    pub res: f64,
+    pub q: f64,
     pub sr: f64,
 }
 
@@ -452,8 +458,7 @@ impl Process<f64> for BiquadBandPass {
         let omega = f_to_omega(f, self.sr);
         let c = omega.cos();
         let s = omega.sin();
-        let q = r_to_q(self.res) + 0.01;
-        let alpha = s / (2.0 * q);
+        let alpha = s / (2.0 * self.q);
 
         let b_0 = alpha;
         let b_1 = 0.0;
@@ -471,18 +476,22 @@ impl BiquadBandPass {
         Self {
             core: BiquadCore::new(),
             cutoff: 440.0,
-            res: 0.3,
+            q: 0.707,
             sr: 44100.0,
         }
     }
 
     pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+
+    /// Allows to set the Q-factor by giving a resonance parameter between 0 and 1
+    /// resembling the resonance setting of an analog filter.
+    pub fn set_res(&mut self, res: f64) { self.q = r_to_q(res) + 0.01; }
 }
 
 pub struct BiquadNotch {
     core: BiquadCore,
     pub cutoff: f64,
-    pub res: f64,
+    pub q: f64,
     pub sr: f64,
 }
 
@@ -493,8 +502,7 @@ impl Process<f64> for BiquadNotch {
         let omega = f_to_omega(f, self.sr);
         let c = omega.cos();
         let s = omega.sin();
-        let q = r_to_q(self.res) + 0.01;
-        let alpha = s / (2.0 * q);
+        let alpha = s / (2.0 * self.q);
 
         let b_0 = 1.0;
         let b_1 = -2.0 * c;
@@ -512,18 +520,22 @@ impl BiquadNotch {
         Self {
             core: BiquadCore::new(),
             cutoff: 440.0,
-            res: 0.3,
+            q: 0.707,
             sr: 44100.0,
         }
     }
 
     pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+
+    /// Allows to set the Q-factor by giving a resonance parameter between 0 and 1
+    /// resembling the resonance setting of an analog filter.
+    pub fn set_res(&mut self, res: f64) { self.q = r_to_q(res) + 0.01; }
 }
 
 pub struct BiquadAllPass {
     core: BiquadCore,
     pub cutoff: f64,
-    pub res: f64,
+    pub q: f64,
     pub sr: f64,
 }
 
@@ -534,8 +546,7 @@ impl Process<f64> for BiquadAllPass {
         let omega = f_to_omega(f, self.sr);
         let c = omega.cos();
         let s = omega.sin();
-        let q = r_to_q(self.res) + 0.01;
-        let alpha = s / (2.0 * q);
+        let alpha = s / (2.0 * self.q);
 
         let b_0 = 1.0 - alpha;
         let b_1 = -2.0 * c;
@@ -553,18 +564,22 @@ impl BiquadAllPass {
         Self {
             core: BiquadCore::new(),
             cutoff: 440.0,
-            res: 0.3,
+            q: 0.707,
             sr: 44100.0,
         }
     }
 
     pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+
+    /// Allows to set the Q-factor by giving a resonance parameter between 0 and 1
+    /// resembling the resonance setting of an analog filter.
+    pub fn set_res(&mut self, res: f64) { self.q = r_to_q(res) + 0.01; }
 }
 
 pub struct BiquadPeaking {
     core: BiquadCore,
     pub cutoff: f64,
-    pub res: f64,
+    pub q: f64,
     pub sr: f64,
     pub db_gain: f64,
 }
@@ -576,9 +591,8 @@ impl Process<f64> for BiquadPeaking {
         let omega = f_to_omega(f, self.sr);
         let c = omega.cos();
         let s = omega.sin();
-        let q = r_to_q(self.res) + 0.01;
         let amp = db_to_gain(self.db_gain);
-        let alpha = s / (2.0 * q);
+        let alpha = s / (2.0 * self.q);
 
         let b_0 = 1.0 + alpha * amp;
         let b_1 = -2.0 * c;
@@ -596,19 +610,23 @@ impl BiquadPeaking {
         Self {
             core: BiquadCore::new(),
             cutoff: 440.0,
-            res: 0.3,
+            q: 0.707,
             sr: 44100.0,
             db_gain: 0.0,
         }
     }
 
     pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+
+    /// Allows to set the Q-factor by giving a resonance parameter between 0 and 1
+    /// resembling the resonance setting of an analog filter.
+    pub fn set_res(&mut self, res: f64) { self.q = r_to_q(res) + 0.01; }
 }
 
 pub struct BiquadLowShelf {
     core: BiquadCore,
     pub cutoff: f64,
-    pub res: f64,
+    pub q: f64,
     pub sr: f64,
     pub db_gain: f64,
 }
@@ -620,9 +638,8 @@ impl Process<f64> for BiquadLowShelf {
         let omega = f_to_omega(f, self.sr);
         let c = omega.cos();
         let s = omega.sin();
-        let q = r_to_q(self.res) + 0.01;
         let amp = db_to_gain(self.db_gain);
-        let alpha = s * 0.5 * ((amp + 1.0 / amp) * (1.0 / q - 1.0) + 2.0).sqrt();
+        let alpha = s * 0.5 * ((amp + 1.0 / amp) * (1.0 / self.q - 1.0) + 2.0).sqrt();
         let aux_shelf = 2.0 * alpha * amp.sqrt();
 
         let b_0 = amp * ((amp + 1.0) - (amp - 1.0) * c + aux_shelf);
@@ -641,19 +658,23 @@ impl BiquadLowShelf {
         Self {
             core: BiquadCore::new(),
             cutoff: 440.0,
-            res: 0.3,
+            q: 0.707,
             sr: 44100.0,
             db_gain: 0.0,
         }
     }
 
     pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+
+    /// Allows to set the Q-factor by giving a resonance parameter between 0 and 1
+    /// resembling the resonance setting of an analog filter.
+    pub fn set_res(&mut self, res: f64) { self.q = r_to_q(res) + 0.01; }
 }
 
 pub struct BiquadHighShelf {
     core: BiquadCore,
     pub cutoff: f64,
-    pub res: f64,
+    pub q: f64,
     pub sr: f64,
     pub db_gain: f64,
 }
@@ -665,9 +686,8 @@ impl Process<f64> for BiquadHighShelf {
         let omega = f_to_omega(f, self.sr);
         let c = omega.cos();
         let s = omega.sin();
-        let q = r_to_q(self.res) + 0.01;
         let amp = db_to_gain(self.db_gain);
-        let alpha = s * 0.5 * ((amp + 1.0 / amp) * (1.0 / q - 1.0) + 2.0).sqrt();
+        let alpha = s * 0.5 * ((amp + 1.0 / amp) * (1.0 / self.q - 1.0) + 2.0).sqrt();
         let aux_shelf = 2.0 * alpha * amp.sqrt();
 
         let b_0 = amp * ((amp + 1.0) + (amp - 1.0) * c + aux_shelf);
@@ -686,13 +706,17 @@ impl BiquadHighShelf {
         Self {
             core: BiquadCore::new(),
             cutoff: 440.0,
-            res: 0.3,
+            q: 0.707,
             sr: 44100.0,
             db_gain: 0.0,
         }
     }
 
     pub fn set_sr(&mut self, sr: f64) { self.sr = sr; }
+
+    /// Allows to set the Q-factor by giving a resonance parameter between 0 and 1
+    /// resembling the resonance setting of an analog filter.
+    pub fn set_res(&mut self, res: f64) { self.q = r_to_q(res) + 0.01; }
 }
 
 

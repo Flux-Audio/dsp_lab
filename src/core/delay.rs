@@ -5,42 +5,19 @@ use std::collections::VecDeque;
 use crate::utils::math;
 use crate::traits::Process;
 use crate::core::RawRingBuffer;
+use crate::shared_enums::{InterpMethod, ScaleMethod};
 
 const MAX_SIZE: usize = 131072;
 
 
 /// Efficient and hi-fi multitap delay, for delay and reverb effects.
 pub struct DelayLine {
-    vector: Box<RawRingBuffer<MAX_SIZE>>,
+    vector: RawRingBuffer<MAX_SIZE>,
     sr: f64,
     head_offsets: Vec<f64>,
     head_gains: Vec<f64>,
-    interp_mode: InterpMethod,
-    mix_mode: MixMethod,
-}
-
-/// Used to select interpolation method in the delay line.
-/// - Truncate: no interpolation, fastest
-/// - NearestNeighbor: select the closest index to the specified time, fast
-/// - Linear: you need at least this to remove artifacts when modulating time
-///   however it will distort a tiny bit, pretty much as fast (if not faster) than
-///   nearest neighbor.
-/// - Quadratic: less distortion than linear, slowest
-pub enum InterpMethod {
-    Truncate,
-    NearestNeighbor,
-    Linear,
-    Quadratic,
-}
-
-/// Used to select how volume is scaled when mixing
-/// - Sum: no volume scaling, volume will be much higher
-/// - Sqrt: divide by the square root of the number of taps, perceptual average
-/// - Average: divide by the number of taps, numerical average
-pub enum MixMethod {
-    Sum,
-    Sqrt,
-    Average,
+    pub interp_mode: InterpMethod,
+    pub mix_mode: ScaleMethod,
 }
 
 impl DelayLine {
@@ -49,14 +26,14 @@ impl DelayLine {
     /// - size: size in milliseconds
     /// - sr: sample rate in hertz
     /// - interp: interpolation method
-    pub fn new(interp: InterpMethod, mix: MixMethod) -> Self {
+    pub fn new() -> Self {
         Self {
-            vector: Box::new(RawRingBuffer::new()),
+            vector: RawRingBuffer::new(),
             sr: 44100.0,
             head_offsets: Vec::new(),
             head_gains: Vec::new(),
-            interp_mode: interp,
-            mix_mode: mix,
+            interp_mode: InterpMethod::Linear,
+            mix_mode: ScaleMethod::Perceptual,
         }
     }
 
@@ -71,7 +48,7 @@ impl DelayLine {
     /// # Returns
     /// - index of the head
     pub fn add_head(&mut self, offset: f64, gain: f64) -> usize {
-        let offset = (offset/1000.0 * self.sr).clamp(0.0, MAX_SIZE as f64);
+        //let offset = (offset/1000.0 * self.sr).clamp(0.0, MAX_SIZE as f64);
         self.head_offsets.push(offset);
         self.head_gains.push(gain);
         self.head_offsets.len() - 1
@@ -102,9 +79,9 @@ impl DelayLine {
     /// The vector of heads is shifted, thus all indexes greater than the one
     /// removed are shifted with it.
     pub fn set_offset(&mut self, index: usize, offset: f64) -> bool {
-        let offset = (offset/1000.0 * self.sr).clamp(0.0, MAX_SIZE as f64);
+        //let offset = (offset/1000.0 * self.sr).clamp(0.0, MAX_SIZE as f64);
         if index < self.head_offsets.len() {
-            self.head_offsets[index] = offset/1000.0 * self.sr;
+            self.head_offsets[index] = offset;
             true
         } else {
             false
@@ -122,24 +99,26 @@ impl Process<f64> for DelayLine {
         // Step 1: read previous values from read heads
         let accumulator = self.head_offsets.iter()
             .zip(self.head_gains.iter())
-            .map(|(a, b)| { match self.interp_mode {
+            .map(|(a, b)| { 
+                let offset = (a / 1000.0 * self.sr).clamp(0.0, MAX_SIZE as f64);
+                match self.interp_mode {
                     InterpMethod::Truncate => 
-                        self.vector[*a as usize] * b,
+                        self.vector[offset as usize] * b,
                     InterpMethod::NearestNeighbor => 
-                        self.vector[(*a).round() as usize] * b,
+                        self.vector[offset.round() as usize] * b,
                     InterpMethod::Linear => {
-                        let i = ((*a).floor() as usize).clamp(0, MAX_SIZE);
-                        let x = *a - i as f64;
+                        let i = (offset.floor() as usize).clamp(0, MAX_SIZE);
+                        let x = offset - i as f64;
                         math::x_fade(self.vector[i], x, self.vector[i + 1]) * b},
                     InterpMethod::Quadratic => {
-                        let i = ((*a).floor() as usize).clamp(1, MAX_SIZE);
-                        let x = *a - i as f64;
+                        let i = (offset.floor() as usize).clamp(1, MAX_SIZE);
+                        let x = offset - i as f64;
                         math::quad_interp(self.vector[i - 1], self.vector[i], self.vector[i + 1], x) * b},
                 }})
             .sum::<f64>() / match self.mix_mode {
-                MixMethod::Sum => 1.0,
-                MixMethod::Sqrt => (self.head_offsets.len() as f64).sqrt(),
-                MixMethod::Average => self.head_offsets.len() as f64,
+                ScaleMethod::Off => 1.0,
+                ScaleMethod::Perceptual => (self.head_offsets.len() as f64).sqrt(),
+                ScaleMethod::Unity => self.head_offsets.len() as f64,
             };
 
         // Step 2: write new value and shift deque

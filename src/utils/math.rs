@@ -15,7 +15,7 @@ pub fn fast_sigmoid(x: f64) -> f64 {
     let i = 0x5fe6eb50c7b537a9 - (i >> 1);              // what the fuck?
     let y = f64::from_bits(i);
     let inv_sq = y * (1.5 - 0.5 * q * y * y);           // 1st iteration
- // let inv_sq_2 = inv_sq * (1.5 - 0.5 * q * y * y);    // 2nd iteration, this can be removed
+    let inv_sq_2 = inv_sq * (1.5 - 0.5 * q * y * y);    // 2nd iteration, this can be removed
     inv_sq * x
 }
 

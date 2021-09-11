@@ -17,6 +17,8 @@ use num::Float;
 use std::os::raw::{c_double, c_int};
 use std::ops::Index;
 
+
+
 /// This process does nothing, except passing the values supplied by step to the
 /// output unchanged. It is mostly for debugging and testing purposes. It can
 /// also serve as a template for developing other processes.
@@ -41,7 +43,7 @@ impl Source<f64> for EmptySource {
 /// which does softer error handling but may add overhead in cases where extreme 
 /// optimization is a requirement.
 pub struct RawRingBuffer<const CAP: usize> {
-    buffer: [f64; CAP],
+    buffer: Box<[f64]>,
     write_ptr: usize,
 }
 
@@ -53,7 +55,7 @@ impl<const CAP: usize> RawRingBuffer<CAP> {
         assert!((CAP != 0) && ((CAP & (CAP - 1)) == 0));
 
         Self {
-            buffer: [0.0; CAP],
+            buffer: vec![0.0; CAP].into_boxed_slice(),
             write_ptr: 0
         }
     }
