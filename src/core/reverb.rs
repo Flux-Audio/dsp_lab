@@ -217,11 +217,11 @@ impl Process<f64> for PolarizedFirDiffuser {
             accum -= self.buff[negative_idx];
         }
 
-        match self.polarization {
+        (match self.polarization {
             Polarization::Unity => accum + input,
             Polarization::Zero => accum,
             Polarization::NegativeUnity => accum - input,
-        }
+        }) / range as f64
     }
 }
 
