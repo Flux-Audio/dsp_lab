@@ -104,7 +104,8 @@ impl Process<f64> for DenseFirDiffuser {
         self.buff.push(input);
 
         // return sum of all prime taps up to num
-        let range = (self.size.clamp(0.0, 1.0) * 1027.0) as usize;
+        let mut range = (self.size.clamp(0.0, 1.0) * 1027.0) as usize;
+        if range == 0 { range = 1 };    // ensure minimum size
         let mut accum = 0.0;
         for i in 0..range {
             let idx = PRIMES[i];
@@ -143,7 +144,8 @@ impl Process<f64> for SparseFirDiffuser {
         self.buff.push(input);
 
         // return sum of all prime taps up to num
-        let range = (self.size.clamp(0.0, 1.0) * 289.0) as usize;
+        let mut range = (self.size.clamp(0.0, 1.0) * 289.0) as usize;
+        if range == 0 { range = 1 };    // ensure minimum size
         let mut accum = 0.0;
         for i in 0..range {
             let idx = HO_PRIMES[i];
@@ -187,7 +189,8 @@ impl Process<f64> for PolarizedFirDiffuser {
 
         // return sum of all prime taps up to num, once for positive and once
         // for negative taps.
-        let range = (self.size.clamp(0.0, 1.0) * 83.0) as usize;
+        let mut range = (self.size.clamp(0.0, 1.0) * 83.0) as usize;
+        if range == 0 { range = 1 };    // ensure minimum size
         let positive_taps = match self.positive_tuning {
             TuningVectors::A => SPARSE_A,
             TuningVectors::B => SPARSE_B,
