@@ -4,12 +4,14 @@
 use std::collections::VecDeque;
 use crate::utils::math;
 use crate::traits::Process;
+use crate::core::RawRingBuffer;
+
+const MAX_SIZE: usize = 131072;
 
 
 /// Efficient and hi-fi multitap delay, for delay and reverb effects.
 pub struct DelayLine {
-    vector: VecDeque<f64>,
-    num: usize,
+    vector: Box<RawRingBuffer<MAX_SIZE>>,
     sr: f64,
     head_offsets: Vec<f64>,
     head_gains: Vec<f64>,
@@ -47,17 +49,19 @@ impl DelayLine {
     /// - size: size in milliseconds
     /// - sr: sample rate in hertz
     /// - interp: interpolation method
-    pub fn new(size: f64, sr: f64, interp: InterpMethod, mix: MixMethod) -> Self {
-        let num = (size/1000.0 * sr) as usize + 1;
+    pub fn new(interp: InterpMethod, mix: MixMethod) -> Self {
         Self {
-            vector: VecDeque::from(vec![0.0; num]),
-            num: num,
-            sr: sr,
+            vector: Box::new(RawRingBuffer::new()),
+            sr: 44100.0,
             head_offsets: Vec::new(),
             head_gains: Vec::new(),
             interp_mode: interp,
             mix_mode: mix,
         }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) {
+        self.sr = sr;
     }
 
     /// add a read head
@@ -67,7 +71,8 @@ impl DelayLine {
     /// # Returns
     /// - index of the head
     pub fn add_head(&mut self, offset: f64, gain: f64) -> usize {
-        self.head_offsets.push(offset/1000.0 * self.sr);
+        let offset = (offset/1000.0 * self.sr).clamp(0.0, MAX_SIZE as f64);
+        self.head_offsets.push(offset);
         self.head_gains.push(gain);
         self.head_offsets.len() - 1
     }
@@ -97,6 +102,7 @@ impl DelayLine {
     /// The vector of heads is shifted, thus all indexes greater than the one
     /// removed are shifted with it.
     pub fn set_offset(&mut self, index: usize, offset: f64) -> bool {
+        let offset = (offset/1000.0 * self.sr).clamp(0.0, MAX_SIZE as f64);
         if index < self.head_offsets.len() {
             self.head_offsets[index] = offset/1000.0 * self.sr;
             true
@@ -122,11 +128,11 @@ impl Process<f64> for DelayLine {
                     InterpMethod::NearestNeighbor => 
                         self.vector[(*a).round() as usize] * b,
                     InterpMethod::Linear => {
-                        let i = ((*a).floor() as usize).clamp(0, self.num - 1);
+                        let i = ((*a).floor() as usize).clamp(0, MAX_SIZE);
                         let x = *a - i as f64;
                         math::x_fade(self.vector[i], x, self.vector[i + 1]) * b},
                     InterpMethod::Quadratic => {
-                        let i = ((*a).floor() as usize).clamp(1, self.num - 1);
+                        let i = ((*a).floor() as usize).clamp(1, MAX_SIZE);
                         let x = *a - i as f64;
                         math::quad_interp(self.vector[i - 1], self.vector[i], self.vector[i + 1], x) * b},
                 }})
@@ -137,8 +143,7 @@ impl Process<f64> for DelayLine {
             };
 
         // Step 2: write new value and shift deque
-        self.vector.push_front(input);
-        self.vector.pop_back();
+        self.vector.push(input);
 
         return accumulator;
     }
