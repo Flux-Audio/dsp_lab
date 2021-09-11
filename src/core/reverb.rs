@@ -175,7 +175,7 @@ impl PolarizedFirDiffuser {
             size: 0.5,
             positive_tuning: TuningVectors::A,
             negative_tuning: TuningVectors::B,
-            polarization: Polarization::Unity,
+            polarization: Polarization::Zero,
         }
     }
 }
@@ -265,8 +265,8 @@ impl StereoFirDiffuser {
         ret.cross_to_right.negative_tuning = TuningVectors::F;
         ret.cross_to_left.positive_tuning  = TuningVectors::G;
         ret.cross_to_left.negative_tuning  = TuningVectors::H;
-        ret.cross_to_right.polarization = Polarization::Zero;
-        ret.cross_to_left.polarization  = Polarization::Zero;
+        //ret.cross_to_right.polarization = Polarization::Zero;
+        //ret.cross_to_left.polarization  = Polarization::Zero;
         ret
     }
 
