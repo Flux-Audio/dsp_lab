@@ -168,6 +168,7 @@ pub struct PolarizedFirDiffuser {
     pub positive_tuning: TuningVectors,
     pub negative_tuning: TuningVectors,
     pub polarization: Polarization,
+    pub scale_mode: ScaleMethod,
 }
 
 impl PolarizedFirDiffuser {
@@ -178,6 +179,7 @@ impl PolarizedFirDiffuser {
             positive_tuning: TuningVectors::A,
             negative_tuning: TuningVectors::B,
             polarization: Polarization::Zero,
+            scale_mode: ScaleMethod::Perceptual,
         }
     }
 }
@@ -220,11 +222,16 @@ impl Process<f64> for PolarizedFirDiffuser {
             accum -= self.buff[negative_idx];
         }
 
-        (match self.polarization {
+        accum = match self.polarization {
             Polarization::Unity => accum + input,
             Polarization::Zero => accum,
             Polarization::NegativeUnity => accum - input,
-        }) / range as f64
+        };
+        match self.scale_mode {
+            ScaleMethod::Off => accum,
+            ScaleMethod::Perceptual => accum / (range as f64).sqrt(),
+            ScaleMethod::Unity => accum / (range as f64),
+        }
     }
 }
 
