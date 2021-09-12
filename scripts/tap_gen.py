@@ -77,11 +77,11 @@ def unity_gain_coeffs(size: int):
 
 
 if __name__ == "__main__":
-    primes = [sympy.prime(n) for n in range(1, 1025)]
+    primes = [sympy.prime(n) for n in range(1, 1537)]
     taps = [
         primes[offs::8]
         for offs in range(8)
     ]
     for i in range(len(taps)):
-        print(f"pub const SPARSE_{chr(i + 65)}: [usize; 128] = {taps[i]}")
+        print(f"pub const SPARSE_{chr(i + 65)}: [usize; 192] = {taps[i]};")
         print()

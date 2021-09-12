@@ -152,7 +152,7 @@ impl Process<f64> for SparseFirDiffuser {
 
 
 pub struct PolarizedFirDiffuser {
-    buff: RawRingBuffer<16384>,
+    buff: RawRingBuffer<65536>,
     pub size: f64,
     pub positive_tuning: TuningVectors,
     pub negative_tuning: TuningVectors,
@@ -163,7 +163,7 @@ pub struct PolarizedFirDiffuser {
 impl PolarizedFirDiffuser {
     pub fn new() -> Self {
         Self {
-            buff: RawRingBuffer::<16384>::new(),
+            buff: RawRingBuffer::new(),
             size: 0.5,
             positive_tuning: TuningVectors::A,
             negative_tuning: TuningVectors::B,
@@ -180,7 +180,7 @@ impl Process<f64> for PolarizedFirDiffuser {
 
         // return sum of all prime taps up to num, once for positive and once
         // for negative taps.
-        let mut range = (self.size.clamp(0.0, 1.0) * 128.0) as usize;
+        let mut range = (self.size.clamp(0.0, 1.0) * 192.0) as usize;
         if range == 0 { range = 1 };    // ensure minimum size
         let positive_taps = match self.positive_tuning {
             TuningVectors::A => SPARSE_A,
