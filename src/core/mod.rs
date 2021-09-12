@@ -8,7 +8,7 @@ pub mod osc;
 // pub mod envelopes;           TODO:
 pub mod chaos;                  // random and noise
 pub mod delay;               // TODO: delay line with interpolation
-// pub mod fft;                 TODO:
+pub mod dft;               // DFT algorithms
 pub mod reverb;                 // reverb primitives
 
 use crate::traits::{Process, Source};
