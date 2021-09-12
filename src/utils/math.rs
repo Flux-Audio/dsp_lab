@@ -105,3 +105,15 @@ pub fn par_shaper(mut phi: f64) -> f64 {
     let tgh = 1.0 - 2.0*fgh.abs();
     8.0 * fgh * tgh
 }
+
+#[inline]
+pub fn c_add(a: (f64, f64), b: (f64, f64)) -> (f64, f64) { (a.0 + b.0, a.1 + b.1) }
+
+#[inline]
+pub fn c_sub(a: (f64, f64), b: (f64, f64)) -> (f64, f64) { (a.0 - b.0, a.1 - b.1) }
+
+#[inline]
+pub fn c_mul(a: (f64, f64), b: (f64, f64)) -> (f64, f64) { (a.0 * b.0 - a.1 * b.1, a.0 * b.1 + a.1 * b.0) }
+
+#[inline]
+pub fn i_exp(x: f64) -> (f64, f64) { (x.cos(), x.sin()) }

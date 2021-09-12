@@ -5,7 +5,6 @@
 //! + Generic FIR filters   TODO:
 
 use std::f64::consts;
-use std::collections::VecDeque;
 
 use crate::traits::Process;
 use crate::chain;

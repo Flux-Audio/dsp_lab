@@ -37,7 +37,7 @@ impl Source<f64> for EmptySource {
     fn step(&mut self) -> f64 { 1.0 }
 }
 
-/// Crude stack-allocated ring buffer implementation, that maximizes efficiency 
+/// Crude heap-allocated ring buffer implementation, that maximizes efficiency 
 /// over anything else. Great for reverbs, especially on embedded systems. This 
 /// is the internal datastructure, a public API `SafeRawRingBuffer` is available, 
 /// which does softer error handling but may add overhead in cases where extreme 
@@ -134,6 +134,68 @@ impl<const CAP: usize> SafeRawRingBuffer<CAP> {
         }
     }
 }
+
+
+/// Stack allocated equivalent of `RawRingBuffer`, use only if strictly necessary
+/// for performance. Allocating large arrays on the stack may cause run-time
+/// exceptions if the stack overflows.
+pub struct RawRingBufferNoAlloc<const CAP: usize> {
+    buffer: [f64; CAP],
+    write_ptr: usize,
+}
+
+impl<const CAP: usize> RawRingBufferNoAlloc<CAP> {
+    /// Creates new stack allocated ring buffer, panics if CAP is not a power of
+    /// two.
+    pub fn new() -> Self {
+        // checks if CAP is a power of 2
+        assert!((CAP != 0) && ((CAP & (CAP - 1)) == 0));
+
+        Self {
+            buffer: [0.0; CAP],
+            write_ptr: 0
+        }
+    }
+
+    /// Pushes a new value onto the buffer, overwriting the oldest value if the
+    /// buffer is full.
+    pub fn push(&mut self, x: f64) {
+        self.buffer[self.write_ptr] = x;
+
+        // increment and wrap pointer, with
+        // fast bitwise modulo, possible because we enforce CAP to be a power of 2
+        self.write_ptr = (self.write_ptr + 1) & (CAP - 1);
+    }
+
+    /// Returns value pointed at by `offs`, alternative to using the subscript
+    /// operator to avoid referencing.
+    /// Indexing starts at the newest addition to the buffer, higher indexes mean
+    /// older values.
+    pub fn get(&self, offs: usize) -> f64{
+        assert!(offs < CAP);
+
+        // calculate index as an offset from write_ptr, with wrapping done with
+        // fast bitwise modulo, possible because we enforce CAP to be a power of 2
+        let idx = (self.write_ptr + CAP - offs - 1) & (CAP - 1);
+        self.buffer[idx]
+    }
+}
+
+impl<const CAP: usize> Index<usize> for RawRingBufferNoAlloc<CAP> {
+    type Output = f64;
+
+    /// When indexing, higher index means older values on the buffer. Indexing with
+    /// 0 returns the newest item.
+    fn index(&self, offs: usize) -> &Self::Output {
+        assert!(offs < CAP);
+
+        // calculate index as an offset from write_ptr, with wrapping done with
+        // fast bitwise modulo, possible because we enforce CAP to be a power of 2
+        let idx = (self.write_ptr + CAP - offs - 1) & (CAP - 1);
+        &self.buffer[idx]
+    }
+}
+
 
 /* TODO: uncomment when ready
 /// Denormal-blocking dither.
