@@ -180,7 +180,7 @@ impl Process<f64> for PolarizedFirDiffuser {
 
         // return sum of all prime taps up to num, once for positive and once
         // for negative taps.
-        let mut range = (self.size.clamp(0.0, 1.0) * 83.0) as usize;
+        let mut range = (self.size.clamp(0.0, 1.0) * 128.0) as usize;
         if range == 0 { range = 1 };    // ensure minimum size
         let positive_taps = match self.positive_tuning {
             TuningVectors::A => SPARSE_A,
@@ -286,8 +286,8 @@ impl StereoFirDiffuser {
         self.r_to_l_aux = self.cross_to_left.step(right);
 
         // mixing matrix
-        let ret_l = self.left_aux  + self.crossover * self.r_to_l_aux;
-        let ret_r = self.right_aux + self.crossover * self.l_to_r_aux;
+        let ret_l = self.left_aux * (1.0 - self.crossover)  + self.crossover * self.r_to_l_aux;
+        let ret_r = self.right_aux * (1.0 - self.crossover) + self.crossover * self.l_to_r_aux;
 
         (ret_l, ret_r)
     }

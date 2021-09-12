@@ -1,5 +1,6 @@
 import random
 import math
+import sympy
 
 # lookup table for the first 256 terms in the sequence "sum of primes up to n"
 SUM_P_N = [2, 5, 10, 17, 28, 41, 58, 77, 100, 129, 160, 197, 238, 281, 328, 381, 
@@ -76,69 +77,11 @@ def unity_gain_coeffs(size: int):
 
 
 if __name__ == "__main__":
-    dense_coeffs = unity_gain_coeffs(1028)
-    sparse_coeffs = unity_gain_coeffs(290)
-    print(f"pub const DENSE_COEFFS: [usize; 1028] = {dense_coeffs};")
-    print()
-    print(f"pub const SPARSE_COEFFS: [usize; 290] = {sparse_coeffs};")
-    print()
-    print()
-    
-    print("// SPARSE MULTICHANNEL:")
-    max_idx = sum_less_than(2**14)
-    pool = PRIMES[:max_idx]
-    sparse_a_pool = random.sample(pool, max_idx)
-    sparse_b_pool = random.sample(pool, max_idx)
-    sparse_c_pool = random.sample(pool, max_idx)
-    sparse_d_pool = random.sample(pool, max_idx)
-    sparse_e_pool = random.sample(pool, max_idx)
-    sparse_a = []
-    sparse_a_accum = 0
-    for val in sparse_a_pool:
-        sparse_a_accum += val
-        sparse_a.append(sparse_a_accum)
-    sparse_b = []
-    sparse_b_accum = 0
-    for val in sparse_b_pool:
-        sparse_b_accum += val
-        sparse_b.append(sparse_b_accum)
-    sparse_c = []
-    sparse_c_accum = 0
-    for val in sparse_c_pool:
-        sparse_c_accum += val
-        sparse_c.append(sparse_c_accum)
-    sparse_d = []
-    sparse_d_accum = 0
-    for val in sparse_d_pool:
-        sparse_d_accum += val
-        sparse_d.append(sparse_d_accum)
-    sparse_e = []
-    sparse_e_accum = 0
-    for val in sparse_e_pool:
-        sparse_e_accum += val
-        sparse_e.append(sparse_e_accum)
-    print(f"pub const SPARSE_A: [usize; {max_idx}] = {sparse_a};")
-    print()
-    print(f"pub const SPARSE_B: [usize; {max_idx}] = {sparse_b};")
-    print()
-    print(f"pub const SPARSE_C: [usize; {max_idx}] = {sparse_c};")
-    print()
-    print(f"pub const SPARSE_D: [usize; {max_idx}] = {sparse_d};")
-    print()
-    print(f"pub const SPARSE_E: [usize; {max_idx}] = {sparse_e};")
-
-    sparse_a_coeffs = unity_gain_coeffs(max_idx)
-    sparse_b_coeffs = unity_gain_coeffs(max_idx)
-    sparse_c_coeffs = unity_gain_coeffs(max_idx)
-    sparse_d_coeffs = unity_gain_coeffs(max_idx)
-    sparse_e_coeffs = unity_gain_coeffs(max_idx)
-
-    print(f"pub const SPARSE_A_COEFFS: [usize; {max_idx}] = {sparse_a_coeffs};")
-    print()
-    print(f"pub const SPARSE_B_COEFFS: [usize; {max_idx}] = {sparse_b_coeffs};")
-    print()
-    print(f"pub const SPARSE_C_COEFFS: [usize; {max_idx}] = {sparse_c_coeffs};")
-    print()
-    print(f"pub const SPARSE_D_COEFFS: [usize; {max_idx}] = {sparse_d_coeffs};")
-    print()
-    print(f"pub const SPARSE_E_COEFFS: [usize; {max_idx}] = {sparse_e_coeffs};")
+    primes = [sympy.prime(n) for n in range(1, 1025)]
+    taps = [
+        primes[offs::8]
+        for offs in range(8)
+    ]
+    for i in range(len(taps)):
+        print(f"pub const SPARSE_{chr(i + 65)}: [usize; 128] = {taps[i]}")
+        print()
