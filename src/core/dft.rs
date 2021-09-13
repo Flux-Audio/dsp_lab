@@ -25,8 +25,8 @@ impl SlidingDft {
     
     // TODO: windowing
     pub fn step(&mut self, input: f64) -> &[(f64, f64)] {
-        self.input_buf.push(input);
         let diff = ((input - self.input_buf[self.size - 1]), 0.0);
+        self.input_buf.push(input);
 
         for f in 0..self.size {
             self.frame_buf[f] = c_mul(
