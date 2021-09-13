@@ -2,6 +2,7 @@
 //! library and fast versions of cmath functions.
 
 use std::f64::consts;
+use fastapprox::fast::{sinfull, cosfull};
 
 const FRAC_1_TAU: f64 = 1.0 / consts::TAU;
 
@@ -16,13 +17,60 @@ pub fn fast_sigmoid(x: f64) -> f64 {
     let y = f64::from_bits(i);
     let inv_sq = y * (1.5 - 0.5 * q * y * y);           // 1st iteration
     let inv_sq_2 = inv_sq * (1.5 - 0.5 * q * y * y);    // 2nd iteration, this can be removed
-    inv_sq * x
+    inv_sq_2 * x
 }
+
+/// Fast rounding, is not correct for values like 0.5, 1.5, 2.5, ...
+pub fn fast_round(x: f64) -> f64 {
+    let t = (x.abs() + 0.5).floor();
+    t * x.signum()
+}
+
+
+pub fn fast_sin(x: f64) -> f64 {
+    let cos_core = |x| {
+        let x2 = x * x;
+        let x4 = x2 * x2;
+        let x8 = x4 * x4;
+        let term1 = (-2.7236370439787708e-7 * x2 + 2.4799852696610628e-5) * x8;
+        let term2 = (-1.3888885054799695e-3 * x2 + 4.1666666636943683e-2) * x4;
+        let term3 = -4.9999999999963024e-1 * x2 + 1.0;
+        term1 + term2 + term3
+    };
+
+    let sin_core = |x| {
+        let x2 = x * x;
+        let x4 = x2 * x2;
+        let term1 = (2.7181216275479732e-6 * x2 - 1.9839312269456257e-4) * x4;
+        let term2 = 8.3333293048425631e-3 * x2 - 1.6666666640797048e-1;
+        (term1 + term2) * x2 * x + x
+    };
+
+    let q = fast_round(x * 6.3661977236758138e-1); // divide by tau and round to get quadrant
+    let quadrant = q as u8; // TODO: check if u64 is faster because of allignment
+
+    // t1, t2 and t3 are just three steps of one computation, to avoid mut borrow checks
+    let t1 = x - q * 1.5707963267923333e+00;
+    let t2 = t1 - q * 2.5633441515945189e-12;
+
+    // TODO: check if branchless implementation is faster, i.e. (quadrant & 1) as f64 * cos_core() ...
+    let t3 = if quadrant & 1 > 0 {
+        cos_core(t2)
+    } else {
+        sin_core(t2)
+    };
+    if quadrant & 2 > 0 {
+        -t3
+    } else {
+        t3
+    }
+}
+
 
 /// Crossfade between two values, i.e. linear interpolation.
 /// The crossfading parameter is clamped between 0 and 1.
 /// This function is inlined for hot use inside of interpolation algorithms.
-#[inline(always)]
+#[inline]
 pub fn x_fade(a: f64, x: f64, b: f64) -> f64 {
     let x_clamp = x.clamp(0.0, 1.0);
     a * (1.0 - x_clamp) + b * x_clamp
@@ -116,4 +164,7 @@ pub fn c_sub(a: (f64, f64), b: (f64, f64)) -> (f64, f64) { (a.0 - b.0, a.1 - b.1
 pub fn c_mul(a: (f64, f64), b: (f64, f64)) -> (f64, f64) { (a.0 * b.0 - a.1 * b.1, a.0 * b.1 + a.1 * b.0) }
 
 #[inline]
-pub fn i_exp(x: f64) -> (f64, f64) { (x.cos(), x.sin()) }
+pub fn i_exp(x: f64) -> (f64, f64) { 
+    let x = x as f32; 
+    (cosfull(x) as f64, sinfull(x) as f64) 
+}

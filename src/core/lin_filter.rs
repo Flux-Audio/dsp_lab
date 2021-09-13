@@ -33,7 +33,7 @@ impl Process<f64> for Diff {
     fn step(&mut self, input: f64) -> f64 {
         let ret = input - self.z1;
         self.z1 = input;
-        return ret;
+        ret
     } 
 }
 
@@ -61,7 +61,7 @@ impl LeakyInt {
 impl Process<f64> for LeakyInt {
     fn step(&mut self, input: f64) -> f64 {
         self.z1 = self.z1 * self.pass + input;
-        return self.z1;
+        self.z1
     }
 }
 
@@ -161,7 +161,7 @@ impl Process<f64> for SvfHighPass {
         self.core.cutoff = self.cutoff;
         self.core.res = self.res;
         self.core.filter(input);
-        return self.core.hp;
+        self.core.hp
     }
 }
 
@@ -193,7 +193,7 @@ impl Process<f64> for SvfBandPass {
         self.core.cutoff = self.cutoff;
         self.core.res = self.res;
         self.core.filter(input);
-        return self.core.bp;
+        self.core.bp
     }
 }
 
@@ -225,7 +225,7 @@ impl Process<f64> for SvfBandStop {
         self.core.cutoff = self.cutoff;
         self.core.res = self.res;
         self.core.filter(input);
-        return self.core.bs;
+        self.core.bs
     }
 }
 
@@ -284,7 +284,7 @@ impl Process<f64> for LowPass1P {
     fn step(&mut self, x: f64) -> f64 {
         self.y_z1 = self.a0 * x 
                   + self.b1 * self.y_z1;
-        return self.y_z1;
+        self.y_z1
     }
 }
 
@@ -297,7 +297,7 @@ impl DcBlock {
     pub fn new() -> Self {
         let mut ret = Self { lp: LowPass1P::new(), };
         ret.lp.set_cutoff(10.0);
-        return ret;
+        ret
     }
 
     pub fn set_sr(&mut self, sr: f64) {

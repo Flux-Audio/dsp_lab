@@ -1,6 +1,5 @@
 use std::f64::consts;
 
-use crate::traits::Process;
 use crate::traits::Source;
 use crate::traits::ProcessChain;
 use crate::utils::math::{asym_tri_shaper, par_shaper};

@@ -116,9 +116,7 @@ impl NoiseWhite {
     pub fn new(seed: u8) -> Self {
         let mut rng = RandomCore::new();
         rng.reseed(seed);
-        Self {
-            rng: rng,
-        }
+        Self { rng, }
     }
 }
 
@@ -149,7 +147,7 @@ impl SnhRandom {
             rng: NoiseWhite::new(seed),
             phase: 0.0,
             rad_per_sec: 1.0,
-            sr: sr,
+            sr,
             latch: 0.0,
         }
     }

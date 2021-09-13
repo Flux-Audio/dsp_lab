@@ -13,8 +13,6 @@ pub mod reverb;                 // reverb primitives
 
 use crate::traits::{Process, Source};
 // use crate::core::chaos::RandomToggle;        TODO: uncomment when ready
-use num::Float;
-use std::os::raw::{c_double, c_int};
 use std::ops::Index;
 
 

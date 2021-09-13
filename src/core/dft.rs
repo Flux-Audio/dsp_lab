@@ -26,7 +26,7 @@ impl SlidingDft {
     // TODO: windowing
     pub fn step(&mut self, input: f64) -> &[(f64, f64)] {
         self.input_buf.push(input);
-        let diff = (input - self.input_buf[self.size - 1], 0.0);
+        let diff = ((input - self.input_buf[self.size - 1]), 0.0);
 
         for f in 0..self.size {
             self.frame_buf[f] = c_mul(
@@ -39,12 +39,12 @@ impl SlidingDft {
 
 pub fn inverse_dft(frame: &[(f64, f64)]) -> f64 {
     let mut accum = (0.0, 0.0);
-    for i in 0..frame.len() {
-        accum = if i % 2 == 0 {
-            c_add(accum, frame[i])
-        } else {
-            c_sub(accum, frame[i])
-        }
-    };
+    
+    for item in frame.iter().step_by(2) {
+        accum = c_add(accum, *item);
+    }
+    for item in frame.iter().skip(1).step_by(2) {
+        accum = c_sub(accum, *item);
+    }
     accum.0 / frame.len() as f64
 }

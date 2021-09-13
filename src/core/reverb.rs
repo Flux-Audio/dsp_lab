@@ -42,13 +42,11 @@
 
 mod tuning;
 
-use std::collections::VecDeque;
-use crate::traits::{Process, Source};
-use crate::core::chaos::NoiseWhite;
+use crate::traits::Process;
 use crate::core::RawRingBuffer;
 use crate::core::reverb::tuning::{PRIMES, HO_PRIMES, SPARSE_A, SPARSE_B, SPARSE_C, 
     SPARSE_D, SPARSE_E, SPARSE_F, SPARSE_G, SPARSE_H};
-use crate::shared_enums::{InterpMethod, Polarization, ScaleMethod};
+use crate::shared_enums::{Polarization, ScaleMethod};
 
 pub enum TuningVectors {
     A,
@@ -96,10 +94,9 @@ impl Process<f64> for DenseFirDiffuser {
         let mut range = (self.size.clamp(0.0, 1.0) * 1027.0) as usize;
         if range == 0 { range = 1 };    // ensure minimum size
         let mut accum = 0.0;
-        for i in 0..range {
-            let idx = PRIMES[i];
-            //let coeff = DENSE_COEFFS[i];
-            accum += self.buff[idx];
+
+        for idx in PRIMES.iter().take(range) {
+            accum += self.buff[*idx];
         }
 
         match self.scale_mode {
@@ -136,10 +133,8 @@ impl Process<f64> for SparseFirDiffuser {
         let mut range = (self.size.clamp(0.0, 1.0) * 289.0) as usize;
         if range == 0 { range = 1 };    // ensure minimum size
         let mut accum = 0.0;
-        for i in 0..range {
-            let idx = HO_PRIMES[i];
-            //let coeff = SPARSE_COEFFS[i];
-            accum += self.buff[idx];
+        for idx in HO_PRIMES.iter().take(range) {
+            accum += self.buff[*idx];
         }
         
         match self.scale_mode {

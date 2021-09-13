@@ -1,7 +1,6 @@
 //! Various utilities for implementing delays. Contains DelayLine, a robust clean
 //! delay which can efficiently also be used for reverb.
 
-use std::collections::VecDeque;
 use crate::utils::math;
 use crate::traits::Process;
 use crate::core::RawRingBuffer;
