@@ -36,3 +36,34 @@ pub enum Polarization {
     Zero,
     NegativeUnity,
 }
+
+/// Used in FFT and SDFT to select the windowing function for the input
+pub enum WindowMode {
+    Box,
+    Triangular,
+    Hann,
+    Blackman,
+    BlackmanHarris,
+    Nuttal,
+    FlatTop,
+}
+
+/// Used in FFT to determine overlap ratio, different amounts of overlap prioritize
+/// performance vs reconstruction quality vs analysis accuracy in different ways
+/// 
+/// - `Off` : disables overlapping entirely. Can be useful in analysis but is
+///   strongly advised against if reconstruction is needed.
+/// - `Eco` : like `Default`, but caps the overlap at 50% so it uses two parallel
+///   buffers at most to save on computations.
+/// - `Default`: compromise between flat amplitude and computational complexity
+/// - `FlatAmplitude`: prioritize flatter amplitude, will require more computation than 
+///   `Default`
+/// - `FlatPower`: flatter power spectrum in the analysis for uniform power spectrum
+///   inputs, i.e. prioritizes analysis quality
+pub enum OverlapPolicy {
+    Off,
+    Eco,
+    Default,
+    FlatAmplitude,
+    FlatPower,      
+}

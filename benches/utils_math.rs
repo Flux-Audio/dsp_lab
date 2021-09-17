@@ -34,7 +34,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     */
     
 
-
+    
     c.bench_function("dft", |b| b.iter(|| {
         let mut sdft = SlidingDft::new();
         let mut noise = NoiseWhite::new(1);
@@ -42,6 +42,18 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             black_box(inverse_dft(sdft.step(black_box(noise.step()))));
         }
     }));
+    
+
+    /*
+    let mut group_3 = c.benchmark_group("hann");
+    for x in [0.0, 0.25, 0.75, 1.0, 1.25, 1.75, -0.25, -0.75, -1.25, -1.75].iter() {
+        group_3.bench_with_input(BenchmarkId::new("sin", x), x, 
+            |b, x| b.iter(|| win_hann1(*x, 256.0)));
+        group_3.bench_with_input(BenchmarkId::new("cos", x), x, 
+            |b, x| b.iter(|| win_hann2(*x, 256.0)));
+    }
+    group_3.finish();
+    */
 
 }
 

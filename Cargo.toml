@@ -4,6 +4,7 @@ version = "0.2.0"
 authors = ["Lorenzo Panieri <panierilorenzo@gmail.com>"]
 edition = "2018"
 
+
 [lib]
 name = "dsp_lab"
 path = "src/lib.rs"
@@ -15,15 +16,17 @@ num = "0.4"
 fast-math = "0.1.1"
 fastapprox = "0.3.0"
 criterion = "0.3"
+rustfft = "6.0.1"
 
 [profile.bench]
 opt-level = 3
 lto = "fat"
+rustflags = "-C target-cpu=native"
 
 [profile.dev]
 opt-level = 3
 lto = "fat"
-debug = 1
+debug = true
 
 [dev-dependencies]
 criterion = "0.3"
@@ -35,3 +38,4 @@ harness = false
 [[bin]]
 name = "dsp_lab_test"
 path = "src/bin/main.rs"
+debug = true

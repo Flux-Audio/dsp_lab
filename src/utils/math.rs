@@ -168,3 +168,47 @@ pub fn i_exp(x: f64) -> (f64, f64) {
     let x = x as f32; 
     (cosfull(x) as f64, sinfull(x) as f64) 
 }
+
+#[inline(always)]
+pub fn win_box(_: f64, _: f64) -> f64 { 1.0 }
+
+#[inline]
+pub fn win_tri(n: f64, size: f64) -> f64 {
+    1.0 - ((n - size / 2.0) / ((n + 1.0) / 2.0)).abs()
+}
+
+#[inline]
+pub fn win_welch(n: f64, size: f64) -> f64 {
+    let size_div_2 = size / 2.0;
+    let aux = (n - size_div_2) / size_div_2;
+    1.0 - aux * aux
+}
+
+#[inline]
+pub fn win_hann(n: f64, size: f64) -> f64 {
+    let s = sinfull((consts::PI * n / size) as f32) as f64;
+    s * s
+}
+
+#[inline]
+pub fn win_blackman(n: f64, size: f64) -> f64 {
+    let tau_n_div_size = (consts::TAU * n / size) as f32;
+    0.42659 - 0.49656 * cosfull(tau_n_div_size) as f64 
+            + 0.076849 * cosfull(2.0 * tau_n_div_size) as f64
+}
+
+#[inline]
+pub fn win_blackman_harris(n: f64, size: f64) -> f64 {
+    let tau_n_div_size = (consts::TAU * n / size) as f32;
+    0.35875 - 0.48829 * cosfull(tau_n_div_size) as f64 
+            + 0.14128 * cosfull(2.0 * tau_n_div_size) as f64 
+            + 0.001168 * cosfull(3.0 * tau_n_div_size) as f64
+}
+
+#[inline]
+pub fn win_nuttal(n: f64, size: f64) -> f64 {
+    let tau_n_div_size = (consts::TAU * n / size) as f32;
+    0.355768 - 0.487396 * cosfull(tau_n_div_size) as f64 
+             + 0.144232 * cosfull(2.0 * tau_n_div_size) as f64 
+             + 0.012604 * cosfull(3.0 * tau_n_div_size) as f64
+}
