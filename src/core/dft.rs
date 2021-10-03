@@ -86,23 +86,23 @@ struct FftCore <'a>{
     // sequentially. Each buffer is 4096 samples long
     // and there are 6 of them.
     // NOTE: for optimization, try size-hinting allocations by zerofilling with an iterator rather than pushing.
-    in_buf: Vec<f64>,     
+    in_buf: Vec<f64>,
     
     // the "stack pointers" for the end of each buffer.
     // they are initialized according to the frame gap,
     // then incremented once per sample until they reach
     // the size of the window, at which point they are
     // reset.
-    buf_top: [usize; 6],   
+    buf_top: [usize; 6],
     
     // index of which buffer will be used next in the fft
-    leading_buf: usize,  
+    leading_buf: usize,
     
     // index of the highest buffer in use (depending on overlap)
-    highest_buf: usize,   
+    highest_buf: usize,
     
     // selects which windowing function to use
-    window_mode: WindowMode,  
+    window_mode: WindowMode,
     
     // selects which overlap policy to use
     overlap_policy: OverlapPolicy,
@@ -161,20 +161,54 @@ impl<'a> FftCore<'a> {
     // sets the size of the windows, which changes a lot of how the indexing is
     // performed internally
     fn set_size(&mut self, size: usize) {
-        // TODO:
+        self.size = size;
+        self.apply_config();
     }
 
     // sets the type of window, which not only selects the window mode, but also
     // affects indexing, as each window has a different overlap setting.
     fn set_win_type(&mut self, win: WindowMode) {
-        // TODO:
+        self.window_mode = win;
+        self.apply_config();
     }
 
     // set the overlap policy, which affects the amount of overlap and thus the
     // indexing.
     fn set_overlap_policy(&mut self, policy: OverlapPolicy) {
-        // TODO:
+        self.overlap_policy = policy;
+        self.apply_config();
     }
+
+    // updates the internal state after a configuration change
+    fn apply_config(&mut self) {
+        let col: isize = match self.overlap_policy {
+            OverlapPolicy::Off           => -1,
+            OverlapPolicy::Eco           =>  0,
+            OverlapPolicy::Default       =>  1,
+            OverlapPolicy::FlatAmplitude =>  2,
+            OverlapPolicy::FlatPower     =>  3,
+        };
+        if col == -1 {
+            self.frame_gap = self.size;
+            return;
+        }
+        let row = match self.window_mode {
+            WindowMode::Box            => 0,
+            WindowMode::Triangular     => 1,
+            WindowMode::Welch          => 2,
+            WindowMode::Hann           => 3,
+            WindowMode::BlackmanHarris => 4,
+            WindowMode::Nuttal         => 5,
+            WindowMode::Kaiser         => 6,
+            WindowMode::FlatTop        => 7
+        };
+        let overlap_size = (OVERLAPS[col as usize + row * 4] * self.size as f64) as usize;
+        self.frame_gap = self.size - overlap_size;
+
+        // TODO: write window into window buffer
+    }
+
+    
 
     // returns true if the fft_buf has not been read since it was last computed.
     fn is_updated(&self) -> bool {

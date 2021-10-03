@@ -41,10 +41,11 @@ pub enum Polarization {
 pub enum WindowMode {
     Box,
     Triangular,
+    Welch,
     Hann,
-    Blackman,
     BlackmanHarris,
     Nuttal,
+    Kaiser,
     FlatTop,
 }
 
