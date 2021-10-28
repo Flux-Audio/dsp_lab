@@ -17,7 +17,8 @@ pub mod traits;
 pub mod utils;
 pub mod core;
 pub mod effects;
-pub mod emulation;
+pub mod virtual_analog;
+// pub mod physical_modelling;
 pub mod shared_enums;
 
 /// This macro is used to build signal chains.

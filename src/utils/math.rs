@@ -4,68 +4,24 @@
 use std::f64::consts;
 use fastapprox::fast::{sinfull, cosfull};
 
+#[cfg(not(feature = "no_fpu"))]
+use crate::utils::math_impl;
+#[cfg(feature = "no_fpu")]
+use crate::utils::math_impl_no_fpu as math_impl;
+
 const FRAC_1_TAU: f64 = 1.0 / consts::TAU;
 
-/// Fast sigmoid. This is not the same as tanh, but quite close. It uses the
-/// infamous quake inverse square root, but f64. I left the comments in for
-/// extra analog warmth
-pub fn fast_sigmoid(x: f64) -> f64 {
-    let q = 1.0 + x * x;
 
-    let i = q.to_bits();                                // evil floating point bit level hacking
-    let i = 0x5fe6eb50c7b537a9 - (i >> 1);              // what the fuck?
-    let y = f64::from_bits(i);
-    let inv_sq = y * (1.5 - 0.5 * q * y * y);           // 1st iteration
-    let inv_sq_2 = inv_sq * (1.5 - 0.5 * q * y * y);    // 2nd iteration, this can be removed
-    inv_sq_2 * x
-}
+/// Fast sigmoid. This is not the same as tanh, but quite close, with the bonus
+/// of being much simpler computation-wise
+#[inline(always)]
+pub fn fast_sigmoid(x: f64) -> f64 { math_impl::impl_fast_sigmoid(x) }
 
 /// Fast rounding, is not correct for values like 0.5, 1.5, 2.5, ...
 pub fn fast_round(x: f64) -> f64 {
     let t = (x.abs() + 0.5).floor();
     t * x.signum()
 }
-
-
-pub fn fast_sin(x: f64) -> f64 {
-    let cos_core = |x| {
-        let x2 = x * x;
-        let x4 = x2 * x2;
-        let x8 = x4 * x4;
-        let term1 = (-2.7236370439787708e-7 * x2 + 2.4799852696610628e-5) * x8;
-        let term2 = (-1.3888885054799695e-3 * x2 + 4.1666666636943683e-2) * x4;
-        let term3 = -4.9999999999963024e-1 * x2 + 1.0;
-        term1 + term2 + term3
-    };
-
-    let sin_core = |x| {
-        let x2 = x * x;
-        let x4 = x2 * x2;
-        let term1 = (2.7181216275479732e-6 * x2 - 1.9839312269456257e-4) * x4;
-        let term2 = 8.3333293048425631e-3 * x2 - 1.6666666640797048e-1;
-        (term1 + term2) * x2 * x + x
-    };
-
-    let q = fast_round(x * 6.3661977236758138e-1); // divide by tau and round to get quadrant
-    let quadrant = q as u8; // TODO: check if u64 is faster because of allignment
-
-    // t1, t2 and t3 are just three steps of one computation, to avoid mut borrow checks
-    let t1 = x - q * 1.5707963267923333e+00;
-    let t2 = t1 - q * 2.5633441515945189e-12;
-
-    // TODO: check if branchless implementation is faster, i.e. (quadrant & 1) as f64 * cos_core() ...
-    let t3 = if quadrant & 1 > 0 {
-        cos_core(t2)
-    } else {
-        sin_core(t2)
-    };
-    if quadrant & 2 > 0 {
-        -t3
-    } else {
-        t3
-    }
-}
-
 
 /// Crossfade between two values, i.e. linear interpolation.
 /// The crossfading parameter is clamped between 0 and 1.
@@ -75,6 +31,13 @@ pub fn x_fade(a: f64, x: f64, b: f64) -> f64 {
     let x_clamp = x.clamp(0.0, 1.0);
     a * (1.0 - x_clamp) + b * x_clamp
 }
+
+/// Linear interpolation of two samples
+/// 
+/// Identical to `x_fade` provided only for completeness as it follows the same
+/// naming scheme of other interpolation functions.
+#[inline(always)]
+pub fn lin_interp(y_0: f64, y_1: f64, x_01: f64) -> f64 { x_fade(y_0, x_01, y_1) }
 
 /// Quadratic interpolation, for high quality (but slower) sample interpolation
 pub fn quad_interp(y_m: f64, y_0: f64, y_1: f64, x_01: f64) -> f64 {
@@ -112,7 +75,18 @@ pub fn pre_post_gains(x: f64) -> (f64, f64) {
 /// and values below 0.5 resemble a log curve.
 pub fn var_clip(x: f64, h: f64) -> f64 {
     let s = (1.0 - h).clamp(1e-30, 1.0);
-    x.abs() / (1.0 + x.abs().powf(1.0 / s)).powf(s) * x.signum()
+    x / (1.0 + x.abs().powf(1.0 / s)).powf(s)
+}
+
+
+/// Unbounded saturator
+///
+/// Has the property of not converging to a ceiling value, and also of having
+/// roughly the same amount of curvature indipendently on the range of the input
+/// signal, so it can be driven more and more and never fully saturate.
+pub fn unbounded_sat(x: f64) -> f64 {
+    x.asinh()
+    // TODO: implement fast no_fpu implementation
 }
 
 
