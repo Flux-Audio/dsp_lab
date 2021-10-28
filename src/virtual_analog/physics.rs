@@ -56,11 +56,11 @@ impl HysteresisLegacy{
 /// The derivative of `fast_sigmoid` is used instead of the derivative of the Langevin function.
 /// This is equal to `1 - fast_sigmoid(x) * fast_sigmoid(x)`
 pub struct MagneticHysteresis {
-    sr: f64,
-    a: f64,
-    c: f64,
-    k: f64,
-    s: f64,
+    pub sr: f64,
+    pub a: f64,
+    pub c: f64,
+    pub k: f64,
+    pub s: f64,
     x_z1:  f64,
     dx_z1: f64,
     y_z1:  f64,
