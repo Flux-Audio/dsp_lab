@@ -12,6 +12,8 @@ use crate::utils::conversion::{f_to_omega, r_to_q, db_to_gain};
 
 
 // === BASICS ===
+// TODO: move differentiators and integrators into a new sub-module "filter_primitives"
+// and add the non-linear integrators as well.
 
 // TODO: replace with sample-rate aware diff
 /// Discrete sample differentiator
@@ -19,6 +21,8 @@ use crate::utils::conversion::{f_to_omega, r_to_q, db_to_gain};
 /// # Caveats
 /// This is not sample-rate aware, i.e. it does not scale the volume, i.e. it is
 /// not a derivative.
+#[deprecated(since="0.2.0", note="Deprecated since it is not sample rate aware.
+Use DiffFwd, DiffC or  instead.")]
 pub struct Diff { z1: f64 }
 
 impl Diff {
@@ -37,6 +41,49 @@ impl Process<f64> for Diff {
     } 
 }
 
+/// Simple forward-differentiator for numeric derivatives. 
+/// 
+/// Acts as a 6dB/oct tilt that boosts high frequencies and cuts low frequencies.
+/// 
+/// # Caveats
+/// * Deviates from ideal derivative curve near nyquist, good for most audio
+/// applications, but not for accurate numeric derivatives. For that use `DiffHQ`
+/// 
+/// * For noisy audio, i.e real-world audio the noise in the signal is significantly
+/// amplified (as expected from differentiation), however using `DiffC`, which
+/// performs centered differentiation, attenuates frequencies above fs/4 and
+/// reduces noise.
+pub struct DiffFwd {
+    x_z1: f64,
+    sr_scale: f64,
+}
+
+impl DiffFwd {
+    pub fn new() -> Self {
+        Self {
+            x_z1: 0.0,
+            sr_scale: 1.0,
+        }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) {
+        self.sr_scale = sr / 44100.0;
+    }
+}
+
+impl Process<f64> for DiffFwd {
+    fn step(&mut self, input: f64) -> f64 {
+        let ret = (input - self.x_z1) * self.sr_scale;
+        self.x_z1 = input;
+        ret
+    }
+}
+
+
+// TODO: DiffC for centered finite differentiation
+
+// TODO: DiffHQ for minimizing equation error
+
 
 // TODO: replace with sample-rate aware leaky int
 /// Discrete leaky sample integrator
@@ -44,6 +91,9 @@ impl Process<f64> for Diff {
 /// # Caveats
 /// This is not sample-rate aware, i.e. it does not scale the volume, i.e. it is
 /// not a continuous integral.
+#[deprecated(since="0.2.0", note="Deprecated because it does not scale with
+the sample rate. Use Integ, IntegLeaky or IntegSafe; or IntegClip, IntegSat, IntegOTA from the
+non_lin_filter submodule.")]
 pub struct LeakyInt {
     z1: f64,
     pass: f64,
@@ -64,6 +114,45 @@ impl Process<f64> for LeakyInt {
         self.z1
     }
 }
+
+
+/// Simple numerical integrator, with no extra bells and whistles.
+/// 
+/// # Caveats
+/// * Bad numerical precision, for approximating integrals use `IntegTrpz` or
+/// `IntegRK4`.
+/// * Will overflow with DC signals, for overflow protection use `IntegLeaky` or
+/// `IntegSafe` or remove DC signals with `BlockDC`.
+pub struct Integ {
+    y_z1: f64,
+    inv_sr_scale: f64,
+}
+
+impl Integ {
+    pub fn new() -> Self {
+        Self {
+            y_z1: 0.0,
+            inv_sr_scale: 1.0,
+        }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) {
+        self.inv_sr_scale = 44100.0 / sr;
+    }
+}
+
+impl Process<f64> for Integ {
+    fn step(&mut self, input: f64) -> f64 {
+        self.y_z1 = self.inv_sr_scale * input + self.y_z1;
+        self.y_z1
+    }
+}
+
+
+// TODO: IntegLeaky leaky integrator
+// TODO: IntegSafe  overflow protected integrator
+// TODO: IntegTrpz  trapezoidal rule integrator
+// TODO: IntegRK4   4th-order runge kutta integrator
 
 
 // === SVF CORE 2-POLE FILTERS ===
