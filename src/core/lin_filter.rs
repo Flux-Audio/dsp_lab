@@ -143,7 +143,33 @@ impl Integ {
 
 impl Process<f64> for Integ {
     fn step(&mut self, input: f64) -> f64 {
-        self.y_z1 = self.inv_sr_scale * input + self.y_z1;
+        self.y_z1 += self.inv_sr_scale * input;
+        self.y_z1
+    }
+}
+
+
+pub struct IntegLeaky {
+    y_z1: f64,
+    inv_sr_scale: f64,
+}
+
+impl IntegLeaky {
+    pub fn new() -> Self {
+        Self {
+            y_z1: 0.0,
+            inv_sr_scale: 1.0,
+        }
+    }
+
+    pub fn set_sr(&mut self, sr: f64) {
+        self.inv_sr_scale = 44100.0 / sr;
+    }
+}
+
+impl Process<f64> for IntegLeaky {
+    fn step(&mut self, input: f64) -> f64 {
+        self.y_z1 = self.inv_sr_scale * input + self.y_z1 * 0.99;
         self.y_z1
     }
 }
