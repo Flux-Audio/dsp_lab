@@ -169,7 +169,7 @@ impl IntegLeaky {
 
 impl Process<f64> for IntegLeaky {
     fn step(&mut self, input: f64) -> f64 {
-        self.y_z1 = self.inv_sr_scale * input + self.y_z1 * 0.99;
+        self.y_z1 = self.inv_sr_scale * input + self.y_z1 * 0.9999;
         self.y_z1
     }
 }
