@@ -13,13 +13,16 @@ within the framework is either a process or a chain. A process can also contain
 instances of chains, which themselves contain processes.
 */
 
-pub mod traits;
+
+pub mod traits;/*
 pub mod utils;
 pub mod core;
 pub mod effects;
 pub mod virtual_analog;
 // pub mod physical_modelling;
-pub mod shared_enums;
+pub mod shared_enums; */
+pub mod core;
+pub mod types;
 
 /// This macro is used to build signal chains.
 /// 
@@ -139,6 +142,8 @@ macro_rules! chain_src {
     */
 }
 
+
+/*
 // Non-documented tests
 #[cfg(test)]
 mod tests {
@@ -442,6 +447,5 @@ mod tests {
             delay.step(1.0);
         }
     }
-
-
 }
+*/

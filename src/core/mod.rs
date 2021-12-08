@@ -2,6 +2,7 @@
 
 // pub mod integrators;         TODO:
 // pub mod derivatives;         TODO:
+/*
 pub mod lin_filter;            // linear filters
 pub mod non_lin_filters;       // non-linear filters, like slew limiters, rolling median
 pub mod osc;
@@ -10,7 +11,7 @@ pub mod chaos;                  // random and noise
 pub mod delay;               // TODO: delay line with interpolation
 //pub mod dft;               // DFT algorithms
 pub mod reverb;                 // reverb primitives
-
+*/
 use crate::traits::{Process, Source};
 // use crate::core::chaos::RandomToggle;        TODO: uncomment when ready
 use std::ops::Index;

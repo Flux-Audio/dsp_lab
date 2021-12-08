@@ -1,5 +1,6 @@
 //! All modules must implement these traits to be used in the framework macros.
 
+use std::slice::Iter;
 use num::Float;
 
 pub struct ProcessChain<T>
@@ -44,7 +45,7 @@ where T: Float
 /// the chain_exp! and chain_src! macros.
 /// 
 /// A process is a "stateful function", in other words it's a function that
-/// takes a single input signal, and multiple parameters, and produces a single
+/// takes a single input Float, and multiple parameters, and produces a single
 /// output, with memory of previous states.
 /// 
 /// Processes take a generic type `T` which must implement the `Float` trait.
@@ -82,3 +83,5 @@ where T: Float
     /// sub-process.
     fn step(&mut self) -> T;
 }
+
+pub trait Signal: Float {}

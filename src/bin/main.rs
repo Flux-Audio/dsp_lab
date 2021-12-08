@@ -1,10 +1,14 @@
+/*
 use dsp_lab::utils::math::par_shaper;
-use dsp_lab::core::dft::{SlidingDft, inverse_dft};
+//use dsp_lab::core::dft::{SlidingDft, inverse_dft};
 use dsp_lab::core::chaos::NoiseWhite;
 use dsp_lab::traits::Source;
 use fastapprox::{fast, faster};
 use criterion::black_box;
 
+ */
+
+/*
 fn main() {
     /*
     println!("TESTING SIN APPROXIMATION");
@@ -83,3 +87,6 @@ fn main() {
         black_box(inverse_dft(frame));
     }
 }
+
+ */
+fn main() {}

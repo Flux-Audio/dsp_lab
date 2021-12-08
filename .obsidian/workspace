@@ -1,0 +1,107 @@
+{
+  "main": {
+    "id": "69642bcb6d7f750e",
+    "type": "split",
+    "children": [
+      {
+        "id": "363fab9541746800",
+        "type": "leaf",
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "refactoring_plan.md",
+            "mode": "source"
+          }
+        },
+        "group": "e88afe3c8370effa"
+      },
+      {
+        "id": "caee358d3c11ae68",
+        "type": "leaf",
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "refactoring_plan.md",
+            "mode": "preview"
+          }
+        },
+        "group": "e88afe3c8370effa"
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "a57df55228866f08",
+    "type": "split",
+    "children": [
+      {
+        "id": "771dc0ce8b860ab0",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b639a5d80e68e930",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "75d0e07a03cfd6a2",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "right": {
+    "id": "0e99bdad0cc8c8fa",
+    "type": "split",
+    "children": [
+      {
+        "id": "a9ac99d63c8d44d9",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4d0a0b94e481c081",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "refactoring_plan.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "active": "363fab9541746800",
+  "lastOpenFiles": [
+    "refactoring_plan.md"
+  ]
+}
